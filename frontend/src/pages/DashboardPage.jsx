@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   GraduationCap, BookOpen, Globe, Target, Brain,
   Clock, TrendingUp, Flame, Settings, Plus,
   Award, ChevronRight, BarChart2, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import lessonService from '../services/lessonService';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const LEVEL_COLORS = {
   beginner: 'var(--accent-emerald)',
@@ -40,7 +42,10 @@ const STYLE_LABELS = {
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [lessons, setLessons] = useState([]);
+  const [lessonsLoading, setLessonsLoading] = useState(true);
 
   const firstName = user?.name?.split(' ')[0] || 'Student';
   const level = profile?.knowledge_level;
@@ -49,6 +54,23 @@ export default function DashboardPage() {
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Recently';
+
+  // Load lessons on mount
+  useEffect(() => {
+    const loadLessons = async () => {
+      try {
+        setLessonsLoading(true);
+        const data = await lessonService.getLessons();
+        setLessons(data || []);
+      } catch (error) {
+        console.error('Error loading lessons:', error);
+        setLessons([]);
+      } finally {
+        setLessonsLoading(false);
+      }
+    };
+    loadLessons();
+  }, []);
 
   // Placeholder stats
   const stats = [
@@ -199,19 +221,50 @@ export default function DashboardPage() {
                 <BookOpen size={18} color="var(--accent-cyan)" />
                 <h2>Recent Lessons</h2>
               </div>
-              <div className="empty-state">
-                <div className="empty-icon">
-                  <BookOpen size={32} />
+              {lessonsLoading ? (
+                <div style={{ padding: '1rem' }}><LoadingSpinner /></div>
+              ) : lessons.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">
+                    <BookOpen size={32} />
+                  </div>
+                  <p className="empty-title">No lessons yet</p>
+                  <p className="empty-desc">
+                    Start your first AI-powered lesson to begin learning.
+                  </p>
+                  <button
+                    onClick={() => navigate('/learn/topic')}
+                    className="btn-primary"
+                    style={{ marginTop: '1rem', fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                  >
+                    <Plus size={14} />
+                    Start First Lesson
+                  </button>
                 </div>
-                <p className="empty-title">No lessons yet</p>
-                <p className="empty-desc">
-                  Start your first AI-powered lesson to begin learning.
-                </p>
-                <button id="btn-start-first-lesson" className="btn-primary" style={{ marginTop: '1rem', fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-                  <Plus size={14} />
-                  Start First Lesson
-                </button>
-              </div>
+              ) : (
+                <div className="lessons-list">
+                  {lessons.slice(0, 5).map((lesson) => (
+                    <div key={lesson.id} className="lesson-card">
+                      <div className="lesson-header">
+                        <h3 className="lesson-title">{lesson.topic}</h3>
+                        <span className="lesson-level" style={{ background: LEVEL_COLORS[lesson.level?.toLowerCase()] || 'var(--primary-light)' }}>
+                          {lesson.level}
+                        </span>
+                      </div>
+                      <p className="lesson-status">{lesson.status || 'created'}</p>
+                      <div className="lesson-footer">
+                        <span className="lesson-duration">{lesson.duration_minutes} min</span>
+                        <button
+                          onClick={() => navigate(`/classroom/${lesson.id}`)}
+                          className="btn-lesson"
+                        >
+                          Continue <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Progress Overview */}

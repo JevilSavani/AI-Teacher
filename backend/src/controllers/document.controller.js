@@ -18,10 +18,10 @@ class DocumentController {
 
       // 1. Insert into learning_materials as 'processing'
       const insertResult = await db.query(
-        `INSERT INTO learning_materials (student_id, title, file_url, material_type, processing_status)
-         VALUES ($1, $2, $3, $4, 'processing')
+        `INSERT INTO learning_materials (user_id, title, file_name, file_type, file_url, processing_status)
+         VALUES ($1, $2, $3, $4, $5, 'processing')
          RETURNING *`,
-        [req.user.userId, title || file.originalname, file.path, 'document']
+        [req.user.userId, title || file.originalname, file.originalname, file.mimetype, file.path]
       );
 
       const material = insertResult.rows[0];
@@ -51,7 +51,7 @@ class DocumentController {
   static async getDocuments(req, res, next) {
     try {
       const result = await db.query(
-        `SELECT * FROM learning_materials WHERE student_id = $1 ORDER BY created_at DESC`,
+        `SELECT * FROM learning_materials WHERE user_id = $1 ORDER BY created_at DESC`,
         [req.user.userId]
       );
       return ApiResponse.success(res, result.rows, 'Documents retrieved successfully', 200);
@@ -63,7 +63,7 @@ class DocumentController {
   static async getDocumentById(req, res, next) {
     try {
       const result = await db.query(
-        `SELECT * FROM learning_materials WHERE id = $1 AND student_id = $2`,
+        `SELECT * FROM learning_materials WHERE id = $1 AND user_id = $2`,
         [req.params.id, req.user.userId]
       );
 
@@ -80,7 +80,7 @@ class DocumentController {
   static async deleteDocument(req, res, next) {
     try {
       const result = await db.query(
-        `DELETE FROM learning_materials WHERE id = $1 AND student_id = $2 RETURNING id`,
+        `DELETE FROM learning_materials WHERE id = $1 AND user_id = $2 RETURNING id`,
         [req.params.id, req.user.userId]
       );
 
@@ -108,7 +108,7 @@ class DocumentController {
 
       // Verify ownership
       const checkResult = await db.query(
-        `SELECT id FROM learning_materials WHERE id = $1 AND student_id = $2 AND processing_status = 'ready'`,
+        `SELECT id FROM learning_materials WHERE id = $1 AND user_id = $2 AND processing_status = 'ready'`,
         [materialId, req.user.userId]
       );
 

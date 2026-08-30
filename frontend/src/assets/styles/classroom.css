@@ -1,0 +1,522 @@
+/* Classroom Page Styles */
+
+.classroom-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.classroom-header {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.lesson-title h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.lesson-level {
+    margin: 8px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.classroom-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.language-selector {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.language-selector:hover {
+    border-color: #667eea;
+}
+
+.btn-secondary {
+    padding: 10px 16px;
+    background: #f0f0f0;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+/* Progress Bar */
+.progress-section {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #666;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+/* Main Content Layout */
+.classroom-content {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.teaching-area {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-height: 500px;
+}
+
+.teaching-section {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Welcome Section */
+.teaching-section.welcome {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.teaching-section.welcome h2 {
+    font-size: 32px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.teaching-section.welcome p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+/* Concept Card */
+.concept-card {
+    background: #f8f9ff;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 24px 0;
+}
+
+.concept-card h3 {
+    margin: 0 0 12px 0;
+    color: #667eea;
+}
+
+/* Question Section */
+.teaching-section.question-section h2 {
+    color: #333;
+    margin-bottom: 24px;
+}
+
+.question-card {
+    background: #f8f9ff;
+    border: 2px solid #e0e0ff;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.question-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.option-btn {
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 15px;
+    color: #333;
+}
+
+.option-btn:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.option-btn.selected {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.answer-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.answer-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.guidance-box {
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+    padding: 16px;
+    border-radius: 6px;
+    margin-top: 16px;
+}
+
+.guidance-box h4 {
+    margin: 0 0 8px 0;
+    color: #f57f17;
+}
+
+.guidance-box p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Evaluation Section */
+.teaching-section.evaluation h2 {
+    color: #333;
+    margin-bottom: 24px;
+}
+
+.evaluation-card {
+    background: #f8f9ff;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.evaluation-card.correct {
+    border-left: 6px solid #4caf50;
+}
+
+.evaluation-card.incorrect {
+    border-left: 6px solid #f44336;
+}
+
+.score-display {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e0ff;
+}
+
+.score-display h3 {
+    font-size: 48px;
+    margin: 0;
+    color: #667eea;
+}
+
+.score-display p {
+    margin: 8px 0 0 0;
+    font-size: 18px;
+    color: #666;
+}
+
+.feedback h4,
+.misconceptions h4,
+.explanation h4 {
+    margin: 16px 0 8px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.misconceptions ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.misconceptions li {
+    margin: 8px 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Button Groups */
+.button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary.btn-large {
+    padding: 16px 32px;
+    font-size: 16px;
+}
+
+/* Completion Section */
+.teaching-section.complete {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.teaching-section.complete h2 {
+    font-size: 32px;
+    color: #667eea;
+    margin-bottom: 30px;
+}
+
+.completion-card {
+    background: #f8f9ff;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 30px;
+}
+
+.final-score {
+    font-size: 24px;
+    font-weight: 600;
+    color: #667eea;
+    margin: 0 0 12px 0;
+}
+
+.concepts-learned {
+    font-size: 18px;
+    color: #666;
+    margin: 0 0 12px 0;
+}
+
+.encouragement {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Sidebar */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status-card,
+.rag-chat-panel,
+.concepts-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.status-card h3,
+.rag-chat-panel h3,
+.concepts-card h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 12px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    color: #666;
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-item label {
+    font-weight: 500;
+}
+
+.status-item span {
+    color: #333;
+    font-weight: 600;
+}
+
+.status-item .score {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.info-text {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 12px 0;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.concepts-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.concepts-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+}
+
+.concepts-list li:last-child {
+    border-bottom: none;
+}
+
+.concepts-list li:before {
+    content: "✓ ";
+    color: #4caf50;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+/* Error Message */
+.error-message {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    color: #f44336;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .classroom-header {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .classroom-content {
+        grid-template-columns: 1fr;
+    }
+
+    .teaching-area {
+        padding: 20px;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+
+    .score-display h3 {
+        font-size: 36px;
+    }
+
+    .teaching-section.welcome h2 {
+        font-size: 24px;
+    }
+}
