@@ -1,0 +1,24 @@
+{
+  "name": "ai-teacher",
+  "version": "1.0.0",
+  "description": "AI Teacher - Intelligent, Adaptive, Multimodal Learning Platform",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix backend & npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "start:backend": "npm start --prefix backend"
+  },
+  "keywords": [
+    "ai-teacher",
+    "education",
+    "rag",
+    "llm",
+    "tts",
+    "adaptive-learning"
+  ],
+  "author": "",
+  "license": "MIT"
+}
