@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, LogOut, User, LayoutDashboard, Settings } from 'lucide-react';
+import { GraduationCap, LogOut, User, LayoutDashboard, Settings, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
@@ -40,6 +40,16 @@ export default function Navbar() {
                   >
                     <LayoutDashboard size={15} />
                     Dashboard
+                  </Link>
+
+                  {/* Materials Link */}
+                  <Link
+                    to="/materials"
+                    className="btn-secondary"
+                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  >
+                    <BookOpen size={15} />
+                    Materials
                   </Link>
 
                   {/* Profile Setup */}

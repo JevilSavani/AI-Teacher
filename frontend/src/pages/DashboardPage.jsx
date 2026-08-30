@@ -124,10 +124,10 @@ export default function DashboardPage() {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
-          <button id="btn-new-lesson" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Link to="/learn/topic" id="btn-new-lesson" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
             <Plus size={16} />
             New Lesson
-          </button>
+          </Link>
         </div>
 
         {/* Stats row */}

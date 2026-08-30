@@ -11,6 +11,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import DashboardPage from './pages/DashboardPage';
+import UploadMaterialPage from './pages/UploadMaterialPage';
+import MyMaterialsPage from './pages/MyMaterialsPage';
+import RagChatPage from './pages/RagChatPage';
+import TopicLearningPage from './pages/TopicLearningPage';
 
 /**
  * Root redirect — send authenticated users to dashboard, guests to home
@@ -83,15 +87,12 @@ function AppRoutes() {
         }
       />
 
-      {/* Protected: Dashboard (full-screen layout with its own sidebar) */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Protected routes wrapped with Navbar (for now) */}
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/materials" element={<ProtectedRoute><><Navbar /><MyMaterialsPage /></></ProtectedRoute>} />
+      <Route path="/materials/upload" element={<ProtectedRoute><><Navbar /><UploadMaterialPage /></></ProtectedRoute>} />
+      <Route path="/materials/:id/chat" element={<ProtectedRoute><><Navbar /><RagChatPage /></></ProtectedRoute>} />
+      <Route path="/learn/topic" element={<ProtectedRoute><><Navbar /><TopicLearningPage /></></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
