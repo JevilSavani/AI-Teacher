@@ -1,22 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
-
-const AppContext = createContext();
-
-export function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [theme, setTheme] = useState('dark');
-
-  return (
-    <AppContext.Provider value={{ user, setUser, theme, setTheme }}>
-      {children}
-    </AppContext.Provider>
-  );
-}
-
-export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
-  return context;
-}
+/**
+ * AppContext — kept for backward compatibility.
+ * The real auth context is AuthContext.jsx.
+ * Re-export everything from AuthContext so any old imports still work.
+ */
+export { AuthProvider as AppProvider, useAuth as useApp } from './AuthContext';
