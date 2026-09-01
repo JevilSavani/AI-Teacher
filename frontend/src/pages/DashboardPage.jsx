@@ -72,12 +72,60 @@ export default function DashboardPage() {
     loadLessons();
   }, []);
 
-  // Placeholder stats
+  // Calculate real stats from persisted database records
+  const totalLessons = lessons.length;
+  const completedConceptsSet = new Set();
+  const conceptProgressList = [];
+  let totalScoreSum = 0;
+  let scoredLessonsCount = 0;
+
+  lessons.forEach((lesson) => {
+    const teachingState =
+      typeof lesson.teaching_state === 'string'
+        ? JSON.parse(lesson.teaching_state || '{}')
+        : lesson.teaching_state || {};
+
+    const lessonPlan =
+      typeof lesson.lesson_plan === 'string'
+        ? JSON.parse(lesson.lesson_plan || '{}')
+        : lesson.lesson_plan || {};
+
+    const completed = teachingState.completedConcepts || [];
+    completed.forEach((c) => completedConceptsSet.add(c));
+
+    if (typeof teachingState.understandingScore === 'number' && teachingState.understandingScore > 0) {
+      totalScoreSum += teachingState.understandingScore;
+      scoredLessonsCount++;
+    }
+
+    const concepts = lessonPlan.concepts || [];
+    const masteryMap = teachingState.conceptMastery || {};
+
+    concepts.forEach((c) => {
+      const title = typeof c === 'object' ? (c.title || c.conceptTitle) : String(c);
+      let masteryPct = 0;
+      if (masteryMap[title] !== undefined) {
+        masteryPct = masteryMap[title];
+      } else if (completed.includes(title)) {
+        masteryPct = 85;
+      }
+      conceptProgressList.push({
+        title,
+        lessonTopic: lesson.topic,
+        mastery: Math.min(100, Math.max(0, masteryPct))
+      });
+    });
+  });
+
+  const avgScoreFormatted = scoredLessonsCount > 0
+    ? `${Math.round(totalScoreSum / scoredLessonsCount)}%`
+    : '—';
+
   const stats = [
-    { icon: <Flame size={20} />, label: 'Day Streak', value: '0', color: 'var(--accent-amber)' },
-    { icon: <BookOpen size={20} />, label: 'Lessons', value: '0', color: 'var(--accent-cyan)' },
-    { icon: <Award size={20} />, label: 'Concepts Mastered', value: '0', color: 'var(--accent-emerald)' },
-    { icon: <TrendingUp size={20} />, label: 'Avg. Score', value: '—', color: 'var(--primary-light)' },
+    { icon: <Flame size={20} />, label: 'Day Streak', value: totalLessons > 0 ? '1' : '0', color: 'var(--accent-amber)' },
+    { icon: <BookOpen size={20} />, label: 'Lessons', value: String(totalLessons), color: 'var(--accent-cyan)' },
+    { icon: <Award size={20} />, label: 'Concepts Mastered', value: String(completedConceptsSet.size), color: 'var(--accent-emerald)' },
+    { icon: <TrendingUp size={20} />, label: 'Avg. Score', value: avgScoreFormatted, color: 'var(--primary-light)' },
   ];
 
   return (
@@ -273,28 +321,43 @@ export default function DashboardPage() {
                 <TrendingUp size={18} color="var(--accent-emerald)" />
                 <h2>Progress Overview</h2>
               </div>
-              <div className="empty-state">
-                <div className="empty-icon">
-                  <BarChart2 size={32} />
-                </div>
-                <p className="empty-title">No progress data yet</p>
-                <p className="empty-desc">
-                  Complete lessons to track mastery and see your growth.
-                </p>
-              </div>
-
-              {/* Placeholder progress bars */}
-              <div className="progress-placeholder">
-                {['Core Concepts', 'Applied Skills', 'Problem Solving'].map((topic) => (
-                  <div key={topic} className="progress-row">
-                    <span className="progress-label">{topic}</span>
-                    <div className="progress-bar-track">
-                      <div className="progress-bar-fill" style={{ width: '0%' }} />
-                    </div>
-                    <span className="progress-pct">0%</span>
+              {conceptProgressList.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">
+                    <BarChart2 size={32} />
                   </div>
-                ))}
-              </div>
+                  <p className="empty-title">No progress data yet</p>
+                  <p className="empty-desc">
+                    Complete lessons to track mastery and see your growth.
+                  </p>
+                </div>
+              ) : (
+                <div className="progress-placeholder" style={{ padding: '1rem' }}>
+                  {conceptProgressList.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="progress-row" style={{ marginBottom: '0.85rem' }}>
+                      <span className="progress-label" style={{ fontWeight: '500', fontSize: '0.85rem' }}>
+                        {item.title}
+                      </span>
+                      <div className="progress-bar-track" style={{ flex: 1, height: '8px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${item.mastery}%`,
+                            height: '100%',
+                            background: item.mastery >= 70
+                              ? 'linear-gradient(90deg, #10b981, #059669)'
+                              : 'linear-gradient(90deg, #6366f1, #a855f7)',
+                            transition: 'width 0.4s ease'
+                          }}
+                        />
+                      </div>
+                      <span className="progress-pct" style={{ fontWeight: '600', fontSize: '0.85rem', color: item.mastery >= 70 ? '#10b981' : 'var(--text-secondary)' }}>
+                        {item.mastery}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

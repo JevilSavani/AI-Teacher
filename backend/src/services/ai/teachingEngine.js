@@ -51,58 +51,101 @@ TEACHING INSTRUCTIONS:
   }
 
   /**
+   * Helper to clean internal markers, tool calls, and code blocks from text
+   */
+  _cleanText(text) {
+    if (typeof text !== 'string') return '';
+    return text
+      .replace(/<\|[\s\S]*?\|>/g, '') // Strip internal model/tool markers like <|tool_call_start|>...<|tool_call_end|>
+      .replace(/<tool_call>[\s\S]*?<\/tool_call>/gi, '') // Strip XML-style tool call tags
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
+  }
+
+  /**
    * Respond to a student's query/attempt in the context of a lesson
    * This is where Socratic teaching happens - guide rather than just answer
    */
-  async respondToStudentQuery(studentMessage, history = [], lessonState = {}) {
+  async respondToStudentQuery(studentMessage, history = [], lessonState = {}, contextData = {}) {
     if (!studentMessage) {
       throw new Error('Student message is required');
     }
 
-    const teachingLevel = lessonState.knowledge_level || 'Intermediate';
-    const currentConcept = lessonState.currentConcept || 'Unknown';
+    const teachingLevel = contextData.level || lessonState.knowledge_level || lessonState.level || 'Intermediate';
+    const currentConcept = contextData.concept || lessonState.currentConcept || lessonState.conceptTitle || lessonState.topic || 'General Topic';
+    const actualQuestion = contextData.question || lessonState.question || lessonState.currentQuestion?.question || '';
     const language = lessonState.language || 'English';
 
-    // Build conversation history for context
-    const conversationHistory = history
-      .slice(-5) // Last 5 exchanges
-      .map((h, i) => (i % 2 === 0 ? `Student: ${h}` : `Teacher: ${h}`))
-      .join('\n');
-
-    const systemPrompt = `You are an expert Socratic AI Teacher, not a simple chatbot.
-Your role is to GUIDE the student to understanding, not just give answers.
+    const systemPrompt = `You are an expert Socratic AI Teacher.
+Your goal is to guide the student to discover the solution on their own without giving away the answer, code, or query.
 
 TEACHING CONTEXT:
-- Student Level: ${teachingLevel}
-- Current Concept: ${currentConcept}
-- Language: ${language}
-- Student's Learning Goal: ${lessonState.learning_goal || 'Understanding'}
+- Question: "${actualQuestion || 'N/A'}"
+- Concept: "${currentConcept}"
+- Student's Input: "${studentMessage}"
+- Student's Level: "${teachingLevel}"
+- Language: "${language}"
 
-SOCRATIC METHOD:
-If the student:
-1. Gives a CORRECT answer → Affirm, extend understanding, ask a deeper question
-2. Gives a PARTIAL answer → Guide them to think about what's missing
-3. Gives a WRONG answer → Ask guiding questions to help them discover the error
-4. Asks a question → First ask what THEY think, then explain if needed
-5. Is confused → Simplify and use an analogy or different example
+STRICT INSTRUCTIONS & RULES:
+1. NEVER ask what topic or problem the student is learning.
+2. NEVER ask the student to repeat the question.
+3. NEVER directly solve the question.
+4. NEVER provide the SQL query, code, or complete solution.
+   - WRONG EXAMPLE for "Find top 5 highest-paid employees": "Sort employees by salary descending and limit to 5."
+   - RIGHT EXAMPLE: "Think about how you would arrange employees from highest to lowest salary. Which SQL clause allows you to order rows?"
+5. Give a concise conceptual hint specific to the actual question ("${actualQuestion}") and concept ("${currentConcept}").
+6. If the student says "I don't know", gives an empty answer, or is confused, give ONE small conceptual clue.
+7. End with ONE clear guiding question to prompt the student's next step.
+8. Keep the hint concise and appropriate to the student's level ("${teachingLevel}").
+9. Do NOT output internal thoughts, tool calls, or special tags like <|tool_call_start|>.
+10. Return ONLY a valid JSON object. No markdown code blocks, no preambles, no conversational text outside JSON.
 
-COMMUNICATION:
-- Use encouraging, supportive tone
-- Avoid just giving answers - guide discovery
-- Use examples and analogies appropriate to their level
-- Point out good thinking even in wrong answers
-- Help them make connections to prior knowledge
-- Suggest practice or exploration
+REQUIRED JSON FORMAT:
+{
+  "teacherResponse": "specific Socratic hint",
+  "next_thought": "guiding question"
+}`;
 
-${conversationHistory ? `Recent conversation:\n${conversationHistory}\n` : ''}
+    const userPrompt = `Student says: "${studentMessage}"`;
 
-Respond as a caring, knowledgeable teacher would - not as an AI assistant.`;
+    const rawResponse = await llmProvider.generateCompletion(userPrompt, systemPrompt);
 
-    const response = await llmProvider.generateCompletion(studentMessage, systemPrompt);
+    // 1. Strip all internal model/tool markers & markdown fences
+    let cleaned = this._cleanText(rawResponse);
+
+    // 2. Safely extract JSON object if surrounded by extra text
+    let cleanJsonStr = cleaned;
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanJsonStr = jsonMatch[0];
+    }
+
+    // 3. Parse JSON response
+    let parsedResponse = null;
+    try {
+      parsedResponse = JSON.parse(cleanJsonStr);
+    } catch (err) {
+      console.warn('[TeachingEngine] Failed to parse JSON from LLM response, fallback to clean text:', err.message);
+      parsedResponse = {
+        teacherResponse: cleaned,
+        next_thought: 'What do you think is the first step to approach this question?'
+      };
+    }
+
+    const hint = this._cleanText(parsedResponse?.teacherResponse || parsedResponse?.guidance || cleaned);
+    const nextThought = this._cleanText(parsedResponse?.next_thought || parsedResponse?.guidingQuestion || '');
+
+    // Combined response formatted for display
+    const combinedResponse = nextThought
+      ? `${hint}\n\n${nextThought}`
+      : hint;
 
     return {
       studentMessage,
-      teacherResponse: response,
+      teacherResponse: combinedResponse,
+      hint,
+      next_thought: nextThought,
       concept: currentConcept,
       level: teachingLevel,
       timestamp: new Date().toISOString()

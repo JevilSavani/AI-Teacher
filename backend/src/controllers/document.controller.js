@@ -21,7 +21,7 @@ class DocumentController {
         `INSERT INTO learning_materials (user_id, title, file_name, file_type, file_url, processing_status)
          VALUES ($1, $2, $3, $4, $5, 'processing')
          RETURNING *`,
-        [req.user.userId, title || file.originalname, file.originalname, file.mimetype, file.path]
+        [req.user.userid, title || file.originalname, file.originalname, file.mimetype, file.path]
       );
 
       const material = insertResult.rows[0];
@@ -52,7 +52,7 @@ class DocumentController {
     try {
       const result = await db.query(
         `SELECT * FROM learning_materials WHERE user_id = $1 ORDER BY created_at DESC`,
-        [req.user.userId]
+        [req.user.userid]
       );
       return ApiResponse.success(res, result.rows, 'Documents retrieved successfully', 200);
     } catch (error) {
@@ -64,7 +64,7 @@ class DocumentController {
     try {
       const result = await db.query(
         `SELECT * FROM learning_materials WHERE id = $1 AND user_id = $2`,
-        [req.params.id, req.user.userId]
+        [req.params.id, req.user.userid]
       );
 
       if (result.rows.length === 0) {
@@ -81,7 +81,7 @@ class DocumentController {
     try {
       const result = await db.query(
         `DELETE FROM learning_materials WHERE id = $1 AND user_id = $2 RETURNING id`,
-        [req.params.id, req.user.userId]
+        [req.params.id, req.user.userid]
       );
 
       if (result.rows.length === 0) {
@@ -109,7 +109,7 @@ class DocumentController {
       // Verify ownership
       const checkResult = await db.query(
         `SELECT id FROM learning_materials WHERE id = $1 AND user_id = $2 AND processing_status = 'ready'`,
-        [materialId, req.user.userId]
+        [materialId, req.user.userid]
       );
 
       if (checkResult.rows.length === 0) {

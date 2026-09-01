@@ -2,46 +2,98 @@ import { apiRequest } from './api';
 
 /**
  * Authentication Service
- * Wraps register, login, and getMe API calls.
+ * Handles register, login, current user, and logout.
+ *
+ * JWT is stored in localStorage under the key "token".
  */
 
 export const authService = {
   /**
    * Register a new user
-   * @param {string} name
-   * @param {string} email
-   * @param {string} password
    */
   async register(name, email, password) {
     return apiRequest('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
     });
   },
 
   /**
-   * Login existing user
-   * @param {string} email
-   * @param {string} password
+   * Login existing user.
+   *
+   * Saves the JWT returned by the backend to localStorage
+   * so apiRequest() can automatically attach it to protected requests.
    */
   async login(email, password) {
-    return apiRequest('/auth/login', {
+    const response = await apiRequest('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     });
+
+    if (response.ok) {
+      const token =
+        response.token ||
+        response.accessToken ||
+        response.data?.token ||
+        response.data?.accessToken;
+
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+    }
+
+    return response;
   },
 
   /**
-   * Fetch the currently authenticated user (+ their student profile)
+   * Fetch currently authenticated user.
    */
   async getMe() {
     return apiRequest('/auth/me');
   },
 
   /**
-   * Logout — clears token server-side acknowledgment (token removed client-side)
+   * Logout.
+   *
+   * Always remove the local JWT, even if the server logout request fails.
    */
   async logout() {
-    return apiRequest('/auth/logout', { method: 'POST' });
+    try {
+      return await apiRequest('/auth/logout', {
+        method: 'POST',
+      });
+    } finally {
+      localStorage.removeItem('token');
+    }
+  },
+
+  /**
+   * Check whether a JWT exists locally.
+   */
+  isAuthenticated() {
+    return !!localStorage.getItem('token');
+  },
+
+  /**
+   * Get the stored JWT.
+   */
+  getToken() {
+    return localStorage.getItem('token');
+  },
+
+  /**
+   * Clear the stored JWT.
+   */
+  clearToken() {
+    localStorage.removeItem('token');
   },
 };
+
+export default authService;

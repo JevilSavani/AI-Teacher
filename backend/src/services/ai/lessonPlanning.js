@@ -1,55 +1,68 @@
 const llmProvider = require('./llmProvider');
 
 /**
- * Lesson Planning Service Module
+ * Lesson Planning Service
  * Generates structured curricula, learning objectives, and concept hierarchies.
  */
 class LessonPlanningService {
-    /**
-     * Generates a comprehensive lesson plan based on topic, level, and constraints
-     */
-    async generateLessonPlan(topic, level = 'Intermediate', language = 'English', durationMinutes = 20) {
+    async generateLessonPlan(
+        topic,
+        level = 'Intermediate',
+        language = 'English',
+        durationMinutes = 20
+    ) {
         const systemPrompt = `You are an expert curriculum designer and AI Teacher.
-Create a detailed, personalized lesson plan for the following:
+
+Create a detailed, personalized lesson plan.
 
 Topic: ${topic}
 Student Level: ${level}
 Language: ${language}
 Available Time: ${durationMinutes} minutes
 
-Generate a STRUCTURED lesson plan in JSON format with:
-1. Learning objectives (2-4 clear objectives)
-2. Key concepts (ordered list of concepts to teach)
-3. Teaching strategy (explanation approach)
-4. Estimated duration for each concept
-5. Example scenarios
-6. Practice questions for each concept
-7. Common misconceptions to address
-8. Assessment strategy
+Return ONLY valid JSON.
+Do not use markdown.
+Do not use code fences.
+Do not put newline characters inside JSON string values.
+Escape quotation marks inside strings.
 
-CRITICAL: The structure must be valid JSON. Return ONLY JSON, no markdown wrapping.
-Format strictly as:
+Required JSON structure:
+
 {
   "title": "Lesson Title",
-  "objectives": ["Objective 1", "Objective 2"],
+  "objectives": [
+    "Objective 1",
+    "Objective 2"
+  ],
   "concepts": [
     {
       "title": "Concept Name",
       "description": "Brief description",
       "duration_minutes": 5,
       "difficulty": "Beginner",
-      "teaching_points": ["Point 1", "Point 2"],
+      "teaching_points": [
+        "Point 1",
+        "Point 2"
+      ],
       "example": "Real world example",
       "practice_question": "Question to test understanding"
     }
   ],
   "teaching_strategy": "Description of how to teach this topic",
-  "common_misconceptions": ["Misconception 1", "Misconception 2"],
+  "common_misconceptions": [
+    "Misconception 1",
+    "Misconception 2"
+  ],
   "assessment": {
     "type": "multiple_choice",
-    "questions": ["Q1", "Q2"]
+    "questions": [
+      "Question 1",
+      "Question 2"
+    ]
   }
-}`;
+}
+
+Make sure the response is valid JSON that can be parsed directly with JSON.parse().`;
 
         try {
             const response = await llmProvider.generateCompletion(
@@ -57,21 +70,16 @@ Format strictly as:
                 systemPrompt
             );
 
-            // Clean and parse response
-            let jsonStr = response;
-
-            // Remove markdown code blocks if present
-            if (jsonStr.includes('```json')) {
-                jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            } else if (jsonStr.includes('```')) {
-                jsonStr = jsonStr.replace(/```\n?/g, '').trim();
-            }
-
-            const lessonPlan = JSON.parse(jsonStr);
+            const lessonPlan = this._parseAIJson(response);
 
             // Validate structure
-            if (!lessonPlan.title || !lessonPlan.concepts || !Array.isArray(lessonPlan.concepts)) {
-                throw new Error('Invalid lesson plan structure');
+            if (
+                !lessonPlan ||
+                typeof lessonPlan !== 'object' ||
+                !lessonPlan.title ||
+                !Array.isArray(lessonPlan.concepts)
+            ) {
+                throw new Error('Invalid lesson plan structure returned by AI');
             }
 
             // Add metadata
@@ -81,72 +89,240 @@ Format strictly as:
             lessonPlan.created_at = new Date().toISOString();
 
             return lessonPlan;
+
         } catch (error) {
             console.error('Error generating lesson plan:', error);
 
-            // Return a fallback lesson plan
-            return {
-                title: `Learning ${topic}`,
+            // Return fallback so the application does not crash.
+            return this._createFallbackLesson(
                 topic,
                 level,
                 language,
-                objectives: [
-                    `Understand the fundamentals of ${topic}`,
-                    `Apply concepts of ${topic} to real-world scenarios`,
-                    `Evaluate and analyze problems using ${topic}`
-                ],
-                concepts: [
-                    {
-                        title: `Introduction to ${topic}`,
-                        description: `Basic overview and foundational concepts`,
-                        duration_minutes: Math.floor(durationMinutes / 3),
-                        difficulty: level,
-                        teaching_points: ['Definition', 'Key concepts', 'Importance'],
-                        example: 'Real-world application',
-                        practice_question: `What is ${topic}?`
-                    },
-                    {
-                        title: `Core Principles of ${topic}`,
-                        description: `Key principles and how they work`,
-                        duration_minutes: Math.floor(durationMinutes / 3),
-                        difficulty: level,
-                        teaching_points: ['Main principle 1', 'Main principle 2'],
-                        example: 'Applied example',
-                        practice_question: 'How do the principles apply here?'
-                    },
-                    {
-                        title: `Applications and Practice`,
-                        description: `Practical applications of concepts`,
-                        duration_minutes: Math.floor(durationMinutes / 3),
-                        difficulty: level,
-                        teaching_points: ['Real-world usage', 'Best practices'],
-                        example: 'Complex scenario',
-                        practice_question: 'How would you approach this problem?'
-                    }
-                ],
-                teaching_strategy: `Teach ${topic} progressively from concepts to application`,
-                common_misconceptions: ['Misunderstanding 1', 'Misunderstanding 2'],
-                assessment: {
-                    type: 'multiple_choice',
-                    questions: ['Question 1', 'Question 2', 'Question 3']
-                },
-                created_at: new Date().toISOString()
-            };
+                durationMinutes
+            );
         }
     }
 
     /**
-     * Extract specific concepts from lesson content
+     * Safely parse JSON returned by an LLM.
+     */
+    _parseAIJson(response) {
+        if (!response || typeof response !== 'string') {
+            throw new Error('AI returned an empty response');
+        }
+
+        let jsonStr = response.trim();
+
+        // Remove markdown code fences.
+        jsonStr = jsonStr
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+
+        // Find the outer JSON object if the model added extra text.
+        const firstBrace = jsonStr.indexOf('{');
+        const lastBrace = jsonStr.lastIndexOf('}');
+
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+        }
+
+        try {
+            return JSON.parse(jsonStr);
+        } catch (firstError) {
+            console.warn(
+                'Initial JSON parsing failed. Attempting cleanup...'
+            );
+
+            /*
+             * Some LLMs occasionally return literal control characters
+             * inside JSON strings. Escape them while preserving the
+             * actual JSON structure.
+             */
+            let cleaned = '';
+            let insideString = false;
+            let escaped = false;
+
+            for (let i = 0; i < jsonStr.length; i++) {
+                const char = jsonStr[i];
+
+                if (escaped) {
+                    cleaned += char;
+                    escaped = false;
+                    continue;
+                }
+
+                if (char === '\\') {
+                    cleaned += char;
+                    escaped = true;
+                    continue;
+                }
+
+                if (char === '"') {
+                    insideString = !insideString;
+                    cleaned += char;
+                    continue;
+                }
+
+                if (insideString) {
+                    if (char === '\n') {
+                        cleaned += '\\n';
+                        continue;
+                    }
+
+                    if (char === '\r') {
+                        cleaned += '\\r';
+                        continue;
+                    }
+
+                    if (char === '\t') {
+                        cleaned += '\\t';
+                        continue;
+                    }
+
+                    // Remove other invalid control characters.
+                    if (char.charCodeAt(0) < 32) {
+                        continue;
+                    }
+                }
+
+                cleaned += char;
+            }
+
+            try {
+                return JSON.parse(cleaned);
+            } catch (secondError) {
+                console.error(
+                    'AI JSON parsing failed:',
+                    secondError.message
+                );
+
+                console.error(
+                    'AI response preview:',
+                    jsonStr.substring(0, 2000)
+                );
+
+                throw firstError;
+            }
+        }
+    }
+
+    /**
+     * Fallback lesson plan.
+     */
+    _createFallbackLesson(
+        topic,
+        level,
+        language,
+        durationMinutes
+    ) {
+        const conceptDuration = Math.max(
+            1,
+            Math.floor(durationMinutes / 3)
+        );
+
+        return {
+            title: `Learning ${topic}`,
+            topic,
+            level,
+            language,
+
+            objectives: [
+                `Understand the fundamentals of ${topic}`,
+                `Apply concepts of ${topic} to real-world scenarios`,
+                `Evaluate and analyze problems using ${topic}`
+            ],
+
+            concepts: [
+                {
+                    title: `Introduction to ${topic}`,
+                    description:
+                        'Basic overview and foundational concepts.',
+                    duration_minutes: conceptDuration,
+                    difficulty: level,
+                    teaching_points: [
+                        'Definition',
+                        'Key concepts',
+                        'Importance'
+                    ],
+                    example: 'Real-world application',
+                    practice_question: `What is ${topic}?`
+                },
+
+                {
+                    title: `Core Principles of ${topic}`,
+                    description:
+                        'Key principles and how they work.',
+                    duration_minutes: conceptDuration,
+                    difficulty: level,
+                    teaching_points: [
+                        'Main principle 1',
+                        'Main principle 2'
+                    ],
+                    example: 'Applied example',
+                    practice_question:
+                        'How do the principles apply here?'
+                },
+
+                {
+                    title: 'Applications and Practice',
+                    description:
+                        'Practical applications of the concepts.',
+                    duration_minutes: conceptDuration,
+                    difficulty: level,
+                    teaching_points: [
+                        'Real-world usage',
+                        'Best practices'
+                    ],
+                    example: 'Complex scenario',
+                    practice_question:
+                        'How would you approach this problem?'
+                }
+            ],
+
+            teaching_strategy:
+                `Teach ${topic} progressively from concepts to application.`,
+
+            common_misconceptions: [
+                'Misunderstanding the basic concepts',
+                'Applying concepts incorrectly'
+            ],
+
+            assessment: {
+                type: 'multiple_choice',
+                questions: [
+                    `What is the main idea behind ${topic}?`,
+                    `Which statement correctly describes ${topic}?`,
+                    `How can ${topic} be applied in practice?`
+                ]
+            },
+
+            created_at: new Date().toISOString()
+        };
+    }
+
+    /**
+     * Extract concepts from lesson content.
      */
     async extractConcepts(lessonContent) {
         const systemPrompt = `You are an expert at identifying learning concepts.
-From the following lesson content, extract the key concepts that students need to understand.
-Return as a JSON array of concept objects with title and description.
+
+From the following lesson content, extract the key concepts students need to understand.
+
+Return ONLY valid JSON.
+Do not use markdown or code fences.
 
 Format:
 [
-  { "title": "Concept 1", "description": "Brief description" },
-  { "title": "Concept 2", "description": "Brief description" }
+  {
+    "title": "Concept 1",
+    "description": "Brief description"
+  },
+  {
+    "title": "Concept 2",
+    "description": "Brief description"
+  }
 ]`;
 
         try {
@@ -155,29 +331,61 @@ Format:
                 systemPrompt
             );
 
-            let jsonStr = response.replace(/```json\n?|\n?```/g, '').trim();
+            let jsonStr = response
+                .replace(/^```json\s*/i, '')
+                .replace(/^```\s*/i, '')
+                .replace(/\s*```$/i, '')
+                .trim();
+
+            const firstBracket = jsonStr.indexOf('[');
+            const lastBracket = jsonStr.lastIndexOf(']');
+
+            if (
+                firstBracket !== -1 &&
+                lastBracket !== -1
+            ) {
+                jsonStr = jsonStr.substring(
+                    firstBracket,
+                    lastBracket + 1
+                );
+            }
+
             return JSON.parse(jsonStr);
+
         } catch (error) {
-            console.error('Error extracting concepts:', error);
+            console.error(
+                'Error extracting concepts:',
+                error
+            );
+
             return [];
         }
     }
 
     /**
-     * Get detailed information about a specific lesson
+     * Get detailed lesson information.
      */
     async getLessonDetails(lessonData) {
         if (!lessonData || typeof lessonData !== 'object') {
             throw new Error('Invalid lesson data');
         }
 
-        // If lessonData is already a lesson plan JSON, return enhanced version
-        if (lessonData.concepts && Array.isArray(lessonData.concepts)) {
+        if (
+            lessonData.concepts &&
+            Array.isArray(lessonData.concepts)
+        ) {
             return {
                 ...lessonData,
                 conceptCount: lessonData.concepts.length,
-                estimatedTotalDuration: lessonData.concepts.reduce((sum, c) => sum + (c.duration_minutes || 5), 0),
-                complexityLevel: this._assessComplexity(lessonData)
+                estimatedTotalDuration:
+                    lessonData.concepts.reduce(
+                        (sum, concept) =>
+                            sum +
+                            (concept.duration_minutes || 5),
+                        0
+                    ),
+                complexityLevel:
+                    this._assessComplexity(lessonData)
             };
         }
 
@@ -185,24 +393,41 @@ Format:
     }
 
     /**
-     * Assess the complexity level of a lesson
+     * Assess lesson complexity.
      */
     _assessComplexity(lessonData) {
-        if (!lessonData.concepts || lessonData.concepts.length === 0) return 'Unknown';
+        if (
+            !lessonData.concepts ||
+            lessonData.concepts.length === 0
+        ) {
+            return 'Unknown';
+        }
 
-        const avgDifficulty = lessonData.concepts
-            .map(c => {
-                switch (c.difficulty) {
-                    case 'Beginner': return 1;
-                    case 'Intermediate': return 2;
-                    case 'Advanced': return 3;
-                    default: return 2;
-                }
-            })
-            .reduce((a, b) => a + b, 0) / lessonData.concepts.length;
+        const avgDifficulty =
+            lessonData.concepts
+                .map((concept) => {
+                    switch (concept.difficulty) {
+                        case 'Beginner':
+                            return 1;
+                        case 'Intermediate':
+                            return 2;
+                        case 'Advanced':
+                            return 3;
+                        default:
+                            return 2;
+                    }
+                })
+                .reduce((a, b) => a + b, 0) /
+            lessonData.concepts.length;
 
-        if (avgDifficulty < 1.5) return 'Beginner';
-        if (avgDifficulty < 2.5) return 'Intermediate';
+        if (avgDifficulty < 1.5) {
+            return 'Beginner';
+        }
+
+        if (avgDifficulty < 2.5) {
+            return 'Intermediate';
+        }
+
         return 'Advanced';
     }
 }
