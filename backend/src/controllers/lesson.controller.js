@@ -1,5 +1,6 @@
 const ApiResponse = require('../utils/apiResponse');
 const db = require('../config/db');
+const StudentProfileService = require('../services/student');
 const topicLearning = require('../services/ai/topicLearning');
 const lessonPlanning = require('../services/ai/lessonPlanning');
 const questionGenerator = require('../services/ai/questionGenerator');
@@ -11,6 +12,10 @@ const teachingEngine = require('../services/ai/teachingEngine');
  * Lesson Controller
  */
 class LessonController {
+
+  static getUserId(req) {
+    return req.user?.id || req.user?.userid;
+  }
 
   // Get all lessons for the logged-in user
   static async getLessons(req, res, next) {
@@ -64,7 +69,10 @@ class LessonController {
   // Create lesson from topic
   static async createTopicLesson(req, res, next) {
     try {
-      const userId = req.user.id;
+      const userId = LessonController.getUserId(req);
+      if (!userId) {
+        return ApiResponse.error(res, 'Unauthorized', 401);
+      }
 
       const {
         topic,
@@ -81,8 +89,12 @@ class LessonController {
         );
       }
 
-      const selectedLevel = level || 'Intermediate';
-      const selectedLanguage = language || 'English';
+      // Query current user's profile to get user-specific default language
+      const userProfile = await StudentProfileService.getProfileByUserId(userId);
+      const userDefaultLanguage = userProfile?.preferred_language || 'English';
+
+      const selectedLevel = level || userProfile?.knowledge_level || 'Intermediate';
+      const selectedLanguage = (language && String(language).trim()) ? String(language).trim() : userDefaultLanguage;
       const duration = Number(duration_minutes) || 20;
 
       // Generate lesson plan using OpenRouter/LLM

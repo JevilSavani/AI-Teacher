@@ -46,6 +46,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [lessons, setLessons] = useState([]);
   const [lessonsLoading, setLessonsLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState([]);
+  const [recsLoading, setRecsLoading] = useState(true);
 
   const firstName = user?.name?.split(' ')[0] || 'Student';
   const level = profile?.knowledge_level;
@@ -55,21 +57,28 @@ export default function DashboardPage() {
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Recently';
 
-  // Load lessons on mount
+  // Load lessons & recommendations on mount
   useEffect(() => {
-    const loadLessons = async () => {
+    const loadDashboardData = async () => {
       try {
         setLessonsLoading(true);
-        const data = await lessonService.getLessons();
-        setLessons(data || []);
+        setRecsLoading(true);
+        const [lessonsData, recsData] = await Promise.all([
+          lessonService.getLessons(),
+          lessonService.getRecommendations()
+        ]);
+        setLessons(lessonsData || []);
+        setRecommendations(recsData || []);
       } catch (error) {
-        console.error('Error loading lessons:', error);
+        console.error('Error loading dashboard data:', error);
         setLessons([]);
+        setRecommendations([]);
       } finally {
         setLessonsLoading(false);
+        setRecsLoading(false);
       }
     };
-    loadLessons();
+    loadDashboardData();
   }, []);
 
   // Calculate real stats from persisted database records
@@ -263,6 +272,62 @@ export default function DashboardPage() {
 
           {/* Right column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Recommended for You */}
+            <div className="card">
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles size={18} color="var(--primary-light)" />
+                <h2>Recommended for You</h2>
+              </div>
+              {recsLoading ? (
+                <div style={{ padding: '1rem' }}><LoadingSpinner /></div>
+              ) : recommendations.length === 0 ? (
+                <div className="empty-state">
+                  <p className="empty-title">No recommendations yet</p>
+                  <p className="empty-desc">Complete practice questions to receive personalized recommendations.</p>
+                </div>
+              ) : (
+                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {recommendations.map((rec) => (
+                    <div
+                      key={rec.id}
+                      style={{
+                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--primary-light)' }}>
+                          {rec.recommendation}
+                        </span>
+                        {rec.topic && (
+                          <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-secondary)' }}>
+                            {rec.topic}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                        <strong>Reason:</strong> {rec.reason}
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                        <button
+                          onClick={() => navigate(rec.link || `/classroom/${rec.lessonId}`)}
+                          className="btn-primary"
+                          style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        >
+                          {rec.actionLabel || 'Start Practice'} <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Recent Lessons */}
             <div className="card">
               <div className="card-header">

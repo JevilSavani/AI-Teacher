@@ -56,13 +56,15 @@ export default function RagChatPage() {
     try {
       const response = await documentService.askDocument(id, userMessage);
       
-      // Extract answer and sources
-      let assistantMsg = response.answer;
-      if (response.sources && response.sources.length > 0) {
-        assistantMsg += '\n\n**Sources:**\n' + response.sources.map(s => `- Chunk ${s.index + 1} (Similarity: ${(s.similarity * 100).toFixed(1)}%)`).join('\n');
-      }
+      // Clean answer by stripping [Source X] markers
+      const rawText = typeof response === 'string' ? response : (response?.answer || response?.data?.answer || '');
+      const cleanAnswer = rawText.replace(/\[Source\s*\d+\]/gi, '').trim();
 
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantMsg }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: cleanAnswer,
+        sources: response?.sources || []
+      }]);
     } catch (err) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 

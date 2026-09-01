@@ -3,14 +3,12 @@ import api from './api';
 export const documentService = {
   /**
    * Upload a new document
-   * @param {File} file 
-   * @param {string} title 
-   * @param {Function} onUploadProgress 
    */
   uploadDocument: async (file, title, onUploadProgress) => {
     const formData = new FormData();
     formData.append('file', file);
-    if (title) formData.append('title', title);
+    const docTitle = title || (file ? file.name : 'Document');
+    formData.append('title', docTitle);
 
     const response = await api.post('/documents/upload', formData, {
       headers: {
@@ -18,7 +16,12 @@ export const documentService = {
       },
       onUploadProgress,
     });
-    return response.data?.data || response.data;
+
+    if (!response.ok) {
+      throw new Error(response.message || 'Failed to upload document');
+    }
+
+    return response.data;
   },
 
   /**
@@ -26,7 +29,14 @@ export const documentService = {
    */
   getDocuments: async () => {
     const response = await api.get('/documents');
-    return response.data?.data || response.data || [];
+
+    if (!response.ok) {
+      throw new Error(response.message || 'Failed to load documents');
+    }
+
+    return Array.isArray(response.data)
+      ? response.data
+      : (Array.isArray(response.data?.data) ? response.data.data : []);
   },
 
   /**
@@ -34,7 +44,12 @@ export const documentService = {
    */
   getDocumentById: async (id) => {
     const response = await api.get(`/documents/${id}`);
-    return response.data?.data || response.data;
+
+    if (!response.ok) {
+      throw new Error(response.message || 'Failed to load document');
+    }
+
+    return response.data;
   },
 
   /**
@@ -42,7 +57,12 @@ export const documentService = {
    */
   deleteDocument: async (id) => {
     const response = await api.delete(`/documents/${id}`);
-    return response.data?.data || response.data;
+
+    if (!response.ok) {
+      throw new Error(response.message || 'Failed to delete document');
+    }
+
+    return response.data;
   },
 
   /**
@@ -50,6 +70,11 @@ export const documentService = {
    */
   askDocument: async (id, question) => {
     const response = await api.post(`/documents/${id}/ask`, { question });
-    return response.data?.data || response.data;
+
+    if (!response.ok) {
+      throw new Error(response.message || 'Failed to ask document question');
+    }
+
+    return response.data;
   }
 };

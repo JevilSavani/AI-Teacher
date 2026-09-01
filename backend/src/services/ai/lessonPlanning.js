@@ -21,7 +21,8 @@ Language: ${language}
 Available Time: ${durationMinutes} minutes
 
 CRITICAL LANGUAGE RULE:
-Generate all titles, objectives, concept titles, descriptions, teaching points, examples, and text strictly in "${language}". Keep programming code syntax or technical SQL keywords (e.g. SELECT, WHERE, ORDER BY) in standard technical notation.
+Generate all titles, objectives, concept titles, descriptions, teaching points, examples, and text strictly in "${language}". Keep programming code syntax or technical SQL/C++ keywords (e.g. #include, std::cout, int main, SELECT, WHERE) in standard syntax.
+Do NOT output Spanish, German, French, or any other language unless "${language}" is explicitly specified as that language.
 
 Return ONLY valid JSON.
 Do not use markdown.

@@ -80,14 +80,17 @@ export default function UploadMaterialPage() {
       setError('');
       
       await documentService.uploadDocument(file, title, (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        setUploadProgress(percentCompleted);
+        if (progressEvent && progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
+        }
       });
 
       // Redirect to materials page on success
       navigate('/materials');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
+      console.error('Upload error:', err);
+      setError(err.message || 'Failed to upload document. Please try again.');
       setIsUploading(false);
     }
   };

@@ -23,15 +23,28 @@ class DocumentController {
         return ApiResponse.error(res, 'Unauthorized', 401);
       }
 
-      const { title } = req.body;
+      const { title } = req.body || {};
       const file = req.file;
+
+      const docTitle = String(title || file.originalname || 'Document').substring(0, 255);
+      const fileName = String(file.originalname || 'file').substring(0, 255);
+      const fileType = String(file.mimetype || 'application/octet-stream').substring(0, 255);
+      const filePath = String(file.path || '');
+
+      console.log('Inserting into learning_materials:', {
+        userId,
+        docTitle,
+        fileName,
+        fileType,
+        filePath
+      });
 
       // 1. Insert into learning_materials as 'processing'
       const insertResult = await db.query(
         `INSERT INTO learning_materials (user_id, title, file_name, file_type, file_url, processing_status)
          VALUES ($1, $2, $3, $4, $5, 'processing')
          RETURNING *`,
-        [userId, title || file.originalname, file.originalname, file.mimetype, file.path]
+        [userId, docTitle, fileName, fileType, filePath]
       );
 
       const material = insertResult.rows[0];

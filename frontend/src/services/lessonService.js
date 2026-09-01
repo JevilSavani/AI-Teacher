@@ -258,6 +258,21 @@ export const lessonService = {
     }
 
     return response.data;
+  },
+
+  /**
+   * Get personalized learning recommendations for the logged-in user
+   */
+  getRecommendations: async () => {
+    const response = await api.get('/recommendations');
+
+    if (!response.ok) {
+      throw new Error(
+        response.message || 'Failed to get recommendations'
+      );
+    }
+
+    return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   }
 };
 

@@ -8,7 +8,11 @@ class TopicLearningService {
     const systemPrompt = `You are an expert AI Teacher. 
 Create a structured learning outline for the topic: "${topic}".
 The target student's knowledge level is: ${level}.
-The preferred language is: ${language}.
+The preferred language is strictly: ${language}.
+
+CRITICAL LANGUAGE RULE:
+Generate all course titles, module titles, descriptions, and concept titles strictly in "${language}". Keep programming code syntax (e.g. C++, Java, Python, SQL) in standard code notation.
+Do NOT use Spanish, German, French, or any other language unless "${language}" is explicitly specified as that language.
 
 Respond with a JSON object containing:
 - title: the course title
@@ -58,7 +62,10 @@ Format:
   async explainTopicSection(courseTopic, sectionTitle, level = 'Intermediate', language = 'English') {
     const systemPrompt = `You are an expert AI Teacher. 
 The student is learning about "${courseTopic}" at a ${level} level.
-Their preferred language is ${language}.
+Their preferred language is strictly: ${language}.
+
+CRITICAL LANGUAGE RULE:
+Write your explanation strictly in ${language}. Do NOT write in Spanish or German unless ${language} is explicitly set to Spanish or German.
 
 Explain the following specific section: "${sectionTitle}".
 Keep your explanation clear, engaging, and age/level appropriate. Use analogies and examples where helpful.

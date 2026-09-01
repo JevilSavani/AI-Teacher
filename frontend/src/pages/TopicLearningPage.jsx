@@ -11,6 +11,15 @@ export default function TopicLearningPage() {
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState(profile?.knowledge_level || 'beginner');
   const [language, setLanguage] = useState(profile?.preferred_language || 'English');
+
+  React.useEffect(() => {
+    if (profile?.knowledge_level) {
+      setLevel(profile.knowledge_level);
+    }
+    if (profile?.preferred_language) {
+      setLanguage(profile.preferred_language);
+    }
+  }, [profile]);
   
   const [isLoading, setIsLoading] = useState(false);
   const [outline, setOutline] = useState(null);

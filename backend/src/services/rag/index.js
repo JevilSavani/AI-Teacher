@@ -60,7 +60,7 @@ class RagService {
   }
 
   buildContext(chunks) {
-    return chunks.map((c, i) => `[Source ${i + 1}]: ${c.content}`).join('\n\n');
+    return chunks.map((c) => c.content).join('\n\n');
   }
 
   async answerWithRAG(query, materialId) {
@@ -75,14 +75,16 @@ class RagService {
     const context = this.buildContext(relevantChunks);
     const systemPrompt = `You are a helpful AI Teacher. Use ONLY the provided context from the student's document to answer the question. 
 If the answer is not contained within the context, say "I don't have enough information in the uploaded document to answer that." 
-Cite your sources using the [Source X] labels provided.
+Do NOT include technical markers like [Source 1], [Source 2], chunk numbers, or debug references in your answer. Provide a clean, direct, clear explanation for the student.
 
 Context:
 ${context}`;
 
-    const answer = await llmProvider.generateCompletion(query, systemPrompt);
+    const rawAnswer = await llmProvider.generateCompletion(query, systemPrompt);
+    const cleanAnswer = (rawAnswer || '').replace(/\[Source\s*\d+\]/gi, '').trim();
+
     return {
-      answer,
+      answer: cleanAnswer,
       sources: relevantChunks.map(c => ({ chunkId: c.id, index: c.chunk_index, similarity: c.similarity }))
     };
   }
