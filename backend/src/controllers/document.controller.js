@@ -5,12 +5,22 @@ const ragService = require('../services/rag');
 
 /**
  * Document Controller
+ * Handles uploading, status checking, asking questions, and deleting user learning materials.
  */
 class DocumentController {
+  static getUserId(req) {
+    return req.user?.id || req.user?.userid;
+  }
+
   static async uploadDocument(req, res, next) {
     try {
       if (!req.file) {
         return ApiResponse.error(res, 'No file uploaded', 400);
+      }
+
+      const userId = DocumentController.getUserId(req);
+      if (!userId) {
+        return ApiResponse.error(res, 'Unauthorized', 401);
       }
 
       const { title } = req.body;
@@ -21,12 +31,12 @@ class DocumentController {
         `INSERT INTO learning_materials (user_id, title, file_name, file_type, file_url, processing_status)
          VALUES ($1, $2, $3, $4, $5, 'processing')
          RETURNING *`,
-        [req.user.userid, title || file.originalname, file.originalname, file.mimetype, file.path]
+        [userId, title || file.originalname, file.originalname, file.mimetype, file.path]
       );
 
       const material = insertResult.rows[0];
 
-      // 2. Start async processing (don't await so we can return immediately)
+      // 2. Start processing
       documentService.processUploadedFile(material.id, file.path, file.mimetype)
         .then(async () => {
           await db.query(
@@ -50,9 +60,10 @@ class DocumentController {
 
   static async getDocuments(req, res, next) {
     try {
+      const userId = DocumentController.getUserId(req);
       const result = await db.query(
         `SELECT * FROM learning_materials WHERE user_id = $1 ORDER BY created_at DESC`,
-        [req.user.userid]
+        [userId]
       );
       return ApiResponse.success(res, result.rows, 'Documents retrieved successfully', 200);
     } catch (error) {
@@ -62,9 +73,10 @@ class DocumentController {
 
   static async getDocumentById(req, res, next) {
     try {
+      const userId = DocumentController.getUserId(req);
       const result = await db.query(
         `SELECT * FROM learning_materials WHERE id = $1 AND user_id = $2`,
-        [req.params.id, req.user.userid]
+        [req.params.id, userId]
       );
 
       if (result.rows.length === 0) {
@@ -79,17 +91,15 @@ class DocumentController {
 
   static async deleteDocument(req, res, next) {
     try {
+      const userId = DocumentController.getUserId(req);
       const result = await db.query(
         `DELETE FROM learning_materials WHERE id = $1 AND user_id = $2 RETURNING id`,
-        [req.params.id, req.user.userid]
+        [req.params.id, userId]
       );
 
       if (result.rows.length === 0) {
         return ApiResponse.error(res, 'Document not found', 404);
       }
-
-      // Note: CASCADE deletes from document_chunks (assuming foreign key constraint)
-      // File should also be deleted from disk here ideally.
 
       return ApiResponse.success(res, null, 'Document deleted successfully', 200);
     } catch (error) {
@@ -99,6 +109,7 @@ class DocumentController {
 
   static async askDocument(req, res, next) {
     try {
+      const userId = DocumentController.getUserId(req);
       const { question } = req.body;
       const { id: materialId } = req.params;
 
@@ -106,10 +117,10 @@ class DocumentController {
         return ApiResponse.error(res, 'Question is required', 400);
       }
 
-      // Verify ownership
+      // Verify ownership & ready status
       const checkResult = await db.query(
         `SELECT id FROM learning_materials WHERE id = $1 AND user_id = $2 AND processing_status = 'ready'`,
-        [materialId, req.user.userid]
+        [materialId, userId]
       );
 
       if (checkResult.rows.length === 0) {

@@ -18,7 +18,7 @@ export const documentService = {
       },
       onUploadProgress,
     });
-    return response.data.data;
+    return response.data?.data || response.data;
   },
 
   /**
@@ -26,7 +26,7 @@ export const documentService = {
    */
   getDocuments: async () => {
     const response = await api.get('/documents');
-    return response.data.data;
+    return response.data?.data || response.data || [];
   },
 
   /**
@@ -34,7 +34,7 @@ export const documentService = {
    */
   getDocumentById: async (id) => {
     const response = await api.get(`/documents/${id}`);
-    return response.data.data;
+    return response.data?.data || response.data;
   },
 
   /**
@@ -42,7 +42,7 @@ export const documentService = {
    */
   deleteDocument: async (id) => {
     const response = await api.delete(`/documents/${id}`);
-    return response.data.data;
+    return response.data?.data || response.data;
   },
 
   /**
@@ -50,6 +50,6 @@ export const documentService = {
    */
   askDocument: async (id, question) => {
     const response = await api.post(`/documents/${id}/ask`, { question });
-    return response.data.data;
+    return response.data?.data || response.data;
   }
 };

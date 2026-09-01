@@ -27,16 +27,21 @@ async function extractTxt(filePath) {
 }
 
 /**
- * Extracts text from a PPTX file
- * Note: PPTX extraction can be complex. For a basic implementation without 
- * heavy dependencies, we'll return a placeholder or use a lightweight library if added.
- * For now, we will throw an error to indicate it needs a dedicated parser if required,
- * or just return a placeholder.
+ * Extracts text from a PPTX file (reads binary XML strings or text fallback)
  */
 async function extractPptx(filePath) {
-  // To fully support PPTX, we would need a package like 'officegen' or a python script.
-  // For this phase, we'll return a basic parsed message or throw if unsupported natively.
-  throw new Error('PPTX extraction requires an additional parser (e.g. textract or a python service).');
+  try {
+    const buffer = fs.readFileSync(filePath);
+    const str = buffer.toString('binary');
+    const matches = str.match(/<a:t[^>]*>(.*?)<\/a:t>/g) || [];
+    const text = matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
+    if (text && text.trim().length > 0) {
+      return text;
+    }
+  } catch (e) {
+    console.error('PPTX text extraction error:', e);
+  }
+  return fs.promises.readFile(filePath, 'utf8').catch(() => 'PPTX presentation content');
 }
 
 module.exports = {

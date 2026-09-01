@@ -21,7 +21,8 @@ class RagService {
     );
 
     // Store in DB
-    const client = await db.connect();
+    const pool = db.getPool();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       for (const item of embeddings) {
@@ -65,7 +66,10 @@ class RagService {
   async answerWithRAG(query, materialId) {
     const relevantChunks = await this.retrieveRelevantContext(query, materialId);
     if (relevantChunks.length === 0) {
-      return "I couldn't find any relevant information in the document to answer your question.";
+      return {
+        answer: "I couldn't find any relevant information in the uploaded document to answer your question.",
+        sources: []
+      };
     }
 
     const context = this.buildContext(relevantChunks);
