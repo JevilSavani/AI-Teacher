@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Sparkles, ChevronDown, ChevronRight, Loader } from 'lucide-react';
 import { lessonService } from '../services/lessonService';
 import { useAuth } from '../context/AuthContext';
 
 export default function TopicLearningPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState(profile?.knowledge_level || 'beginner');
@@ -30,6 +32,7 @@ export default function TopicLearningPage() {
       setError('');
       setOutline(null);
       setExplanation('');
+      setActiveTopic(null);
       
       const result = await lessonService.createTopicLesson(topic, level, language);
       setOutline(result.metadata);
@@ -37,15 +40,23 @@ export default function TopicLearningPage() {
       
       if (result.metadata?.modules?.length > 0) {
         setActiveModule(0);
+        const firstModule = result.metadata.modules[0];
+        const firstTopic = firstModule.topics?.[0] || firstModule.title;
+        if (firstTopic) {
+          handleTopicClickWithId(result.id, 0, firstTopic);
+        }
+      } else {
+        setError('No concepts found for this topic. Please try generating with another topic or level.');
       }
     } catch (err) {
+      console.error('Error generating topic outline:', err);
       setError('Failed to generate topic outline. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleTopicClick = async (moduleIndex, topicName) => {
+  const handleTopicClickWithId = async (targetLessonId, moduleIndex, topicName) => {
     setActiveModule(moduleIndex);
     setActiveTopic(topicName);
     
@@ -53,13 +64,19 @@ export default function TopicLearningPage() {
       setIsExplaining(true);
       setExplanation('');
       
-      const result = await lessonService.askTopicLesson(lessonId, topicName, level, language);
-      setExplanation(result.explanation);
+      const currentLessonId = targetLessonId || lessonId;
+      const result = await lessonService.askTopicLesson(currentLessonId, topicName, level, language);
+      setExplanation(result.explanation || result.data?.explanation || 'No explanation generated.');
     } catch (err) {
-      setExplanation("Failed to load explanation for this topic.");
+      console.error('Error getting explanation:', err);
+      setExplanation('Failed to load explanation for this topic.');
     } finally {
       setIsExplaining(false);
     }
+  };
+
+  const handleTopicClick = (moduleIndex, topicName) => {
+    handleTopicClickWithId(lessonId, moduleIndex, topicName);
   };
 
   return (
@@ -148,17 +165,21 @@ export default function TopicLearningPage() {
                     style={{ 
                       display: 'flex', alignItems: 'center', gap: '0.5rem', 
                       fontSize: '0.95rem', fontWeight: '600', marginBottom: '0.5rem',
+                      color: activeTopic === mod.title ? 'var(--primary-light)' : 'var(--text-primary)',
                       cursor: 'pointer'
                     }}
-                    onClick={() => setActiveModule(activeModule === mIdx ? null : mIdx)}
+                    onClick={() => {
+                      setActiveModule(mIdx);
+                      handleTopicClick(mIdx, mod.title);
+                    }}
                   >
                     {activeModule === mIdx ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     {mod.title}
                   </div>
                   
-                  {activeModule === mIdx && (
+                  {activeModule === mIdx && mod.topics && mod.topics.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: '1.5rem' }}>
-                      {mod.topics?.map((t, tIdx) => (
+                      {mod.topics.map((t, tIdx) => (
                         <button
                           key={tIdx}
                           onClick={() => handleTopicClick(mIdx, t)}
@@ -196,18 +217,33 @@ export default function TopicLearningPage() {
                 {isExplaining ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
                     <Loader size={32} className="spin-animation" style={{ marginBottom: '1rem', color: 'var(--primary)' }} />
-                    <p>Generating explanation...</p>
+                    <p>Generating explanation in {language}...</p>
                   </div>
                 ) : (
-                  <div 
-                    style={{ 
-                      fontSize: '1.05rem', 
-                      lineHeight: '1.8', 
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'pre-wrap'
-                    }}
-                  >
-                    {explanation}
+                  <div>
+                    <div 
+                      style={{ 
+                        fontSize: '1.05rem', 
+                        lineHeight: '1.8', 
+                        color: 'var(--text-primary)',
+                        whiteSpace: 'pre-wrap'
+                      }}
+                    >
+                      {explanation}
+                    </div>
+
+                    {explanation && lessonId && (
+                      <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
+                        <button
+                          onClick={() => navigate(`/classroom/${lessonId}`)}
+                          className="btn-primary"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                          <Sparkles size={16} />
+                          Practice & Get Questions
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

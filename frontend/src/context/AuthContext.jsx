@@ -3,7 +3,7 @@ import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
-const TOKEN_KEY = 'ai_teacher_token';
+const TOKEN_KEY = 'token';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -30,12 +30,18 @@ export function AuthProvider({ children }) {
           setToken(storedToken);
         } else {
           // Token is invalid or expired — clear it
-          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem('token');
+          localStorage.removeItem('ai_teacher_token');
           setToken(null);
+          setUser(null);
+          setProfile(null);
         }
       } catch {
-        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem('token');
+        localStorage.removeItem('ai_teacher_token');
         setToken(null);
+        setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -49,10 +55,13 @@ export function AuthProvider({ children }) {
    */
   const register = useCallback(async (name, email, password) => {
     setAuthError(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('ai_teacher_token');
+
     const res = await authService.register(name, email, password);
     if (res.ok && res.data) {
       const { user: newUser, token: newToken } = res.data;
-      localStorage.setItem(TOKEN_KEY, newToken);
+      localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(newUser);
       setProfile(null); // Profile not yet set up
@@ -68,10 +77,13 @@ export function AuthProvider({ children }) {
    */
   const login = useCallback(async (email, password) => {
     setAuthError(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('ai_teacher_token');
+
     const res = await authService.login(email, password);
     if (res.ok && res.data) {
       const { user: loggedInUser, token: newToken } = res.data;
-      localStorage.setItem(TOKEN_KEY, newToken);
+      localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(loggedInUser);
 
@@ -101,7 +113,8 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore logout API errors — always clear local state
     }
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('token');
+    localStorage.removeItem('ai_teacher_token');
     setToken(null);
     setUser(null);
     setProfile(null);

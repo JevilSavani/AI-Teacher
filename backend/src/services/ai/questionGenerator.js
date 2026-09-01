@@ -57,7 +57,8 @@ class QuestionGenerator {
   async generateQuestion(
     concept,
     studentLevel = 'Intermediate',
-    questionType = 'mcq'
+    questionType = 'mcq',
+    language = 'English'
   ) {
     if (!concept) {
       throw new Error('Concept is required');
@@ -136,12 +137,14 @@ Teaching Points: ${JSON.stringify(
     )}
 
 REQUIREMENTS:
+- Language: "${language}"
 - Difficulty: ${difficulty}
 - Question Type: ${typePrompt}
 - Tests whether students understand the concept
 - Appropriate for a ${studentLevel} student
 - Clear and unambiguous
 - No trick questions
+- CRITICAL LANGUAGE RULE: Write the question, options, and explanation strictly in "${language}". Do NOT translate programming code syntax or SQL keywords (e.g. SELECT, WHERE, ORDER BY) incorrectly — keep code elements in standard technical notation.
 
 IMPORTANT:
 Return ONLY the JSON object.
@@ -317,23 +320,26 @@ ${jsonFormat}`;
   async generateRemediationQuestion(
     concept,
     misconception,
-    studentLevel = 'Beginner'
+    studentLevel = 'Beginner',
+    language = 'English'
   ) {
     const conceptTitle = typeof concept === 'object' ? (concept.title || concept.conceptTitle || 'Concept') : String(concept || 'Concept');
 
     const systemPrompt = `You are a specialized remedial educator.
 
-The student is learning "${conceptTitle}" at level "${studentLevel}".
+The student is learning "${conceptTitle}" at level "${studentLevel}" in language "${language}".
 They demonstrated the following specific misconception:
 "${misconception || 'Unclear understanding of the core concept'}"
 
 Generate an EASIER, targeted remedial practice question (Multiple Choice format) focused specifically on correcting this misconception.
 
 RULES:
+- Language: "${language}"
 - Make the question simpler than standard questions (Beginner/Easy level).
 - Focus strictly on addressing the misconception: "${misconception}".
 - Provide 4 clear options (0-indexed correct_answer).
 - Provide a supportive explanation that directly clarifies the misconception.
+- CRITICAL LANGUAGE RULE: Write the question, options, and explanation strictly in "${language}". Do NOT translate programming code syntax or SQL keywords (e.g. SELECT, WHERE, ORDER BY) incorrectly — keep code elements in standard technical notation.
 - Return ONLY valid JSON without markdown formatting.
 
 Required JSON format:

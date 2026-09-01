@@ -9,7 +9,7 @@ class AnswerEvaluator {
    * Evaluate a student's answer to a question
    * Returns: score (0-100), feedback, and detected misconceptions
    */
-  async evaluateAnswer(question, studentAnswer, studentLevel = 'Intermediate') {
+  async evaluateAnswer(question, studentAnswer, studentLevel = 'Intermediate', language = 'English') {
     if (!question || !studentAnswer) {
       throw new Error('Question and studentAnswer are required');
     }
@@ -25,6 +25,9 @@ QUESTION:
 ${JSON.stringify(question, null, 2)}
 
 STUDENT LEVEL: ${studentLevel}
+LANGUAGE: ${language}
+
+CRITICAL LANGUAGE RULE: Write feedback, strengths, improvements, misconceptions, and next_step strictly in "${language}". Do NOT translate programming code syntax or SQL keywords incorrectly.
 
 EVALUATION CRITERIA:
 - Correctness: Is the answer factually correct?
@@ -140,7 +143,7 @@ Return as JSON:
   /**
    * Generate personalized feedback based on performance
    */
-  async generateFeedback(evaluation, studentLevel, concept) {
+  async generateFeedback(evaluation, studentLevel, concept, language = 'English') {
     if (!evaluation) {
       throw new Error('Evaluation object is required');
     }
@@ -156,6 +159,9 @@ STUDENT PERFORMANCE:
 - Misconceptions: ${evaluation.misconceptions?.join(', ') || 'None'}
 
 CONCEPT: ${concept?.title || 'Unknown'}
+LANGUAGE: ${language}
+
+CRITICAL LANGUAGE RULE: Write feedback strictly in "${language}".
 
 FEEDBACK SHOULD:
 1. Acknowledge what they did well

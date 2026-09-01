@@ -412,6 +412,7 @@ class LessonController {
       }
 
       const currentConcept = concepts[currentConceptIndex];
+      const selectedLanguage = lesson.language || teachingState.language || 'English';
 
       let question;
       // Check if student requires a targeted remedial question due to a weak concept/misconception
@@ -420,13 +421,15 @@ class LessonController {
         question = await questionGenerator.generateRemediationQuestion(
           targetConcept,
           teachingState.remedialMisconception,
-          'Beginner'
+          'Beginner',
+          selectedLanguage
         );
       } else {
         question = await questionGenerator.generateQuestion(
           currentConcept,
           lesson.level || 'Intermediate',
-          'mcq'
+          'mcq',
+          selectedLanguage
         );
       }
 
@@ -525,11 +528,14 @@ class LessonController {
         );
       }
 
+      const selectedLanguage = lesson.language || teachingState.language || 'English';
+
       const evaluation =
         await answerEvaluator.evaluateAnswer(
           teachingState.currentQuestion,
           answer,
-          lesson.level || 'Intermediate'
+          lesson.level || 'Intermediate',
+          selectedLanguage
         );
 
       const response = {
@@ -621,7 +627,8 @@ class LessonController {
         await answerEvaluator.generateFeedback(
           evaluation,
           lesson.level || 'Intermediate',
-          currentConcept
+          currentConcept,
+          selectedLanguage
         );
 
       const evaluationResult = {

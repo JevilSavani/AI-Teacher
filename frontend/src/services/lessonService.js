@@ -17,21 +17,53 @@ export const lessonService = {
       );
     }
 
-    const lesson = response.data;
+    let lesson = response.data;
+    if (lesson && lesson.data) {
+      lesson = lesson.data;
+    }
 
-    // Normalize backend lesson structure for TopicLearningPage
+    // Safely parse lesson_plan if it's a string
+    let lessonPlanObj = {};
+    if (typeof lesson?.lesson_plan === 'string') {
+      try {
+        lessonPlanObj = JSON.parse(lesson.lesson_plan);
+      } catch (e) {
+        console.error('Error parsing lesson_plan JSON:', e);
+      }
+    } else if (typeof lesson?.lesson_plan === 'object' && lesson?.lesson_plan !== null) {
+      lessonPlanObj = lesson.lesson_plan;
+    }
+
+    const conceptsList = lessonPlanObj.concepts || [];
+
+    const modules = conceptsList.map((concept, index) => {
+      const conceptTitle = typeof concept === 'object'
+        ? (concept.title || concept.conceptTitle || `Concept ${index + 1}`)
+        : String(concept);
+
+      const conceptDesc = typeof concept === 'object' ? (concept.description || '') : '';
+
+      return {
+        title: conceptTitle,
+        description: conceptDesc,
+        topics: [conceptTitle],
+        conceptObj: concept
+      };
+    });
+
     return {
       ...lesson,
-
-      // Keep lesson_plan available
-      metadata: lesson.lesson_plan || {
-        title: lesson.topic || 'Course Outline',
-        modules: (lesson.lesson_plan?.concepts || []).map(
-          (concept) => ({
-            title: concept.title,
-            topics: [concept.title]
-          })
-        )
+      id: lesson?.id,
+      language: lesson?.language || language || 'English',
+      metadata: {
+        title: lessonPlanObj.title || lesson?.topic || topic || 'Course Outline',
+        modules: modules.length > 0 ? modules : [
+          {
+            title: topic || 'General Overview',
+            topics: [topic || 'Introduction']
+          }
+        ],
+        rawConcepts: conceptsList
       }
     };
   },
@@ -90,7 +122,20 @@ export const lessonService = {
       );
     }
 
-    return response.data;
+    let lesson = response.data;
+    if (lesson && lesson.data) {
+      lesson = lesson.data;
+    }
+
+    if (typeof lesson?.lesson_plan === 'string') {
+      try {
+        lesson.lesson_plan = JSON.parse(lesson.lesson_plan);
+      } catch (e) {
+        console.error('Error parsing lesson_plan JSON in getLessonById:', e);
+      }
+    }
+
+    return lesson;
   },
 
   /**

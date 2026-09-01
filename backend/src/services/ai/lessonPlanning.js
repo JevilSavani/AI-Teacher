@@ -20,6 +20,9 @@ Student Level: ${level}
 Language: ${language}
 Available Time: ${durationMinutes} minutes
 
+CRITICAL LANGUAGE RULE:
+Generate all titles, objectives, concept titles, descriptions, teaching points, examples, and text strictly in "${language}". Keep programming code syntax or technical SQL keywords (e.g. SELECT, WHERE, ORDER BY) in standard technical notation.
+
 Return ONLY valid JSON.
 Do not use markdown.
 Do not use code fences.
