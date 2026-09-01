@@ -261,6 +261,20 @@ export const lessonService = {
   },
 
   /**
+   * Get next lesson/concept progression for authenticated user
+   */
+  getNextProgression: async (id) => {
+    const url = id ? `/lessons/${id}/progression/next` : '/lessons/progression/next';
+    const response = await api.get(url);
+
+    if (!response.ok) {
+      throw new Error(response.message || 'Failed to get progression');
+    }
+
+    return response.data;
+  },
+
+  /**
    * Get personalized learning recommendations for the logged-in user
    */
   getRecommendations: async () => {

@@ -26,6 +26,7 @@ export default function ClassroomPage() {
     const [language, setLanguage] = useState('English');
     const [showRagChat, setShowRagChat] = useState(false);
     const [showQuizModal, setShowQuizModal] = useState(false);
+    const [progression, setProgression] = useState(null);
 
     // ---------------------------------------------------------
     // LOAD LESSON
@@ -44,12 +45,26 @@ export default function ClassroomPage() {
             const statusData =
                 await lessonService.getLessonStatus(lessonId);
 
+            let progData = null;
+            try {
+                progData = await lessonService.getNextProgression(lessonId);
+                setProgression(progData);
+            } catch (e) {
+                console.error('Error fetching progression info:', e);
+            }
+
             setLesson(lessonData);
             setStatus(statusData);
 
             setLanguage(
                 lessonData?.language || 'English'
             );
+
+            if (progData?.isCourseComplete) {
+                setTeachingPhase('course_complete');
+            } else if (statusData?.status === 'completed' || (statusData?.currentConceptIndex >= statusData?.totalConcepts && statusData?.totalConcepts > 0)) {
+                setTeachingPhase('complete');
+            }
 
         } catch (error) {
             console.error(
@@ -140,6 +155,9 @@ export default function ClassroomPage() {
                 'Error getting question:',
                 error
             );
+            if (error?.message?.includes('Lesson is complete')) {
+                await handleContinueLearning();
+            }
         } finally {
             setLoading(false);
         }
@@ -289,34 +307,38 @@ export default function ClassroomPage() {
     };
 
     // ---------------------------------------------------------
-    // MOVE TO NEXT CONCEPT
+    // CONTINUE LEARNING & MOVE TO NEXT CONCEPT
     // ---------------------------------------------------------
-    const moveToNextConcept = async () => {
+    const handleContinueLearning = async () => {
         try {
             setLoading(true);
+            const progression = await lessonService.getNextProgression(lessonId);
 
-            const nextStepData =
-                await lessonService.getNextStep(
-                    lessonId
-                );
-
-            if (
-                nextStepData?.action ===
-                'lesson_complete'
-            ) {
-                setTeachingPhase('complete');
-            } else {
+            if (progression?.isCourseComplete) {
+                setTeachingPhase('course_complete');
+                setStatus(prev => ({
+                    ...prev,
+                    finalScore: progression.finalUnderstandingScore,
+                    totalCompletedConcepts: progression.completedConcepts
+                }));
+            } else if (progression?.isSameLesson) {
+                await loadLesson();
                 await getNextQuestion();
+            } else if (progression?.lessonId) {
+                navigate(`/classroom/${progression.lessonId}`);
+            } else {
+                setTeachingPhase('complete');
             }
-
         } catch (error) {
-            console.error(
-                'Error moving to next concept:',
-                error
-            );
+            console.error('Error continuing learning progression:', error);
+            setTeachingPhase('complete');
         } finally {
             setLoading(false);
         }
+    };
+
+    const moveToNextConcept = async () => {
+        await handleContinueLearning();
     };
 
     // ---------------------------------------------------------
@@ -852,61 +874,105 @@ export default function ClassroomPage() {
                         <div className="teaching-section complete">
 
                             <h2>
-                                🎉 Lesson Complete!
+                                {(progression?.isCourseComplete || (!progression?.isSameLesson && !progression?.lessonId))
+                                    ? "🎉 You've completed all concepts!"
+                                    : "🎉 Concept Complete!"}
                             </h2>
 
                             <div className="completion-card">
 
                                 <p className="final-score">
-                                    Final Understanding
-                                    Score:{' '}
+                                    Understanding Score:{' '}
                                     {Math.round(
-                                        status?.understandingScore ||
-                                        0
+                                        status?.understandingScore || 0
                                     )}
                                     %
                                 </p>
 
                                 <p className="concepts-learned">
                                     Concepts Mastered:{' '}
-                                    {status?.completedConcepts
-                                        ?.length || 0}
+                                    {status?.completedConcepts?.length || 0}
                                     {' / '}
                                     {status?.totalConcepts || 0}
                                 </p>
 
                                 <p className="encouragement">
-                                    Great job! You've
-                                    completed this lesson.
-                                    Consider practicing
-                                    more or trying the
-                                    next topic.
+                                    {(progression?.isCourseComplete || (!progression?.isSameLesson && !progression?.lessonId))
+                                        ? "Great job! You have mastered all concepts in this course."
+                                        : "Great job! You have mastered this concept. Click Continue Learning to advance to the next concept."}
                                 </p>
 
                             </div>
 
                             <div className="button-group">
 
+                                {(!progression?.isCourseComplete && (progression?.isSameLesson || progression?.lessonId)) && (
+                                    <button
+                                        onClick={handleContinueLearning}
+                                        className="btn-primary"
+                                    >
+                                        Continue Learning &rarr;
+                                    </button>
+                                )}
+
                                 <button
-                                    onClick={() =>
-                                        navigate(
-                                            '/dashboard'
-                                        )
-                                    }
-                                    className="btn-primary"
+                                    onClick={() => navigate('/progress')}
+                                    className={(!progression?.isCourseComplete && (progression?.isSameLesson || progression?.lessonId)) ? "btn-secondary" : "btn-primary"}
+                                >
+                                    View Progress
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/dashboard')}
+                                    className="btn-secondary"
                                 >
                                     Back to Dashboard
                                 </button>
 
+                            </div>
+
+                        </div>
+                    )}
+
+                    {/* COURSE COMPLETE */}
+                    {teachingPhase === 'course_complete' && (
+
+                        <div className="teaching-section complete">
+
+                            <h2>
+                                🏆 Course Completed!
+                            </h2>
+
+                            <div className="completion-card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+
+                                <p className="final-score" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#10b981', margin: '0 0 0.5rem' }}>
+                                    Final Score: {status?.finalScore || Math.round(status?.understandingScore || 100)}%
+                                </p>
+
+                                <p className="concepts-learned" style={{ fontSize: '1rem', fontWeight: '600' }}>
+                                    🎉 You've completed all concepts! ({status?.completedConcepts?.length || status?.totalConcepts || 0} / {status?.totalConcepts || status?.completedConcepts?.length || 0})
+                                </p>
+
+                                <p className="encouragement" style={{ color: 'var(--text-secondary)' }}>
+                                    Congratulations! You have completed all lessons and concepts in your learning path.
+                                </p>
+
+                            </div>
+
+                            <div className="button-group" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
+
                                 <button
-                                    onClick={() =>
-                                        navigate(
-                                            '/top-topics'
-                                        )
-                                    }
+                                    onClick={() => navigate('/progress')}
+                                    className="btn-primary"
+                                >
+                                    View Progress & Analytics
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/dashboard')}
                                     className="btn-secondary"
                                 >
-                                    Explore More Topics
+                                    Back to Dashboard
                                 </button>
 
                             </div>

@@ -869,6 +869,128 @@ class LessonController {
       next(error);
     }
   }
+
+  /**
+   * Determine the next incomplete concept/lesson for the authenticated user
+   */
+  static async getNextProgression(req, res, next) {
+    try {
+      const userId = LessonController.getUserId(req);
+      if (!userId) {
+        return ApiResponse.error(res, 'Unauthorized', 401);
+      }
+
+      const { id } = req.params;
+
+      // 1. Check current lesson if ID provided
+      if (id) {
+        const currentRes = await db.query(
+          `SELECT * FROM lessons WHERE id = $1 AND user_id = $2`,
+          [id, userId]
+        );
+
+        if (currentRes.rows.length > 0) {
+          const lesson = currentRes.rows[0];
+          const teachingState = typeof lesson.teaching_state === 'string'
+            ? JSON.parse(lesson.teaching_state || '{}')
+            : lesson.teaching_state || {};
+          const lessonPlan = typeof lesson.lesson_plan === 'string'
+            ? JSON.parse(lesson.lesson_plan || '{}')
+            : lesson.lesson_plan || {};
+
+          const concepts = lessonPlan.concepts || [];
+          const currentConceptIndex = teachingState.currentConceptIndex || 0;
+
+          // If there are remaining concepts in this lesson
+          if (currentConceptIndex < concepts.length) {
+            return ApiResponse.success(res, {
+              isCourseComplete: false,
+              isSameLesson: true,
+              lessonId: lesson.id,
+              topic: lesson.topic,
+              conceptIndex: currentConceptIndex,
+              currentConcept: concepts[currentConceptIndex],
+              totalConcepts: concepts.length,
+              completedConcepts: teachingState.completedConcepts || []
+            }, 'Next concept retrieved', 200);
+          }
+
+          // Mark current lesson as completed if all concepts are done
+          await db.query(
+            `UPDATE lessons SET status = 'completed' WHERE id = $1 AND user_id = $2`,
+            [id, userId]
+          );
+        }
+      }
+
+      // 2. Find next incomplete lesson for req.user.id
+      const nextLessonRes = await db.query(
+        `SELECT * FROM lessons 
+         WHERE user_id = $1 AND status != 'completed'
+         ORDER BY created_at ASC LIMIT 1`,
+        [userId]
+      );
+
+      if (nextLessonRes.rows.length > 0) {
+        const nextLesson = nextLessonRes.rows[0];
+        const nextState = typeof nextLesson.teaching_state === 'string'
+          ? JSON.parse(nextLesson.teaching_state || '{}')
+          : nextLesson.teaching_state || {};
+        const nextPlan = typeof nextLesson.lesson_plan === 'string'
+          ? JSON.parse(nextLesson.lesson_plan || '{}')
+          : nextLesson.lesson_plan || {};
+
+        const nextConcepts = nextPlan.concepts || [];
+        const nextIndex = nextState.currentConceptIndex || 0;
+
+        return ApiResponse.success(res, {
+          isCourseComplete: false,
+          isSameLesson: false,
+          lessonId: nextLesson.id,
+          topic: nextLesson.topic,
+          conceptIndex: nextIndex,
+          currentConcept: nextConcepts[nextIndex] || null,
+          totalConcepts: nextConcepts.length,
+          completedConcepts: nextState.completedConcepts || []
+        }, 'Next lesson retrieved', 200);
+      }
+
+      // 3. All lessons/concepts for user are completed -> Course Complete!
+      const allLessonsRes = await db.query(
+        `SELECT * FROM lessons WHERE user_id = $1`,
+        [userId]
+      );
+      const allLessons = allLessonsRes.rows || [];
+      let totalConceptsCount = 0;
+      let totalCompletedCount = 0;
+      let totalScoreSum = 0;
+
+      allLessons.forEach(l => {
+        const state = typeof l.teaching_state === 'string' ? JSON.parse(l.teaching_state || '{}') : l.teaching_state || {};
+        const plan = typeof l.lesson_plan === 'string' ? JSON.parse(l.lesson_plan || '{}') : l.lesson_plan || {};
+        const cList = plan.concepts || [];
+        totalConceptsCount += cList.length;
+        totalCompletedCount += (state.completedConcepts || []).length;
+        totalScoreSum += (state.understandingScore || 0);
+      });
+
+      const finalUnderstandingScore = allLessons.length > 0
+        ? Math.round(totalScoreSum / allLessons.length)
+        : 100;
+
+      return ApiResponse.success(res, {
+        isCourseComplete: true,
+        message: 'Course Completed! You have mastered all concepts.',
+        finalUnderstandingScore,
+        totalLessons: allLessons.length,
+        totalConcepts: totalConceptsCount,
+        completedConcepts: totalCompletedCount
+      }, 'Course completed', 200);
+
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = LessonController;

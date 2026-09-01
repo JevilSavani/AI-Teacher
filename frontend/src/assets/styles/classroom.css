@@ -1,31 +1,33 @@
-/* Classroom Page Styles */
+/* Classroom Page Styles - AI Teacher Dark Theme */
 
 .classroom-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--bg-primary, #0f0f17);
     padding: 20px;
+    color: var(--text-primary, #f8fafc);
 }
 
 .classroom-header {
-    background: white;
+    background: var(--bg-card, #1e1e2e);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .lesson-title h1 {
     margin: 0;
     font-size: 28px;
-    color: #333;
+    color: var(--text-primary, #f8fafc);
 }
 
 .lesson-level {
     margin: 8px 0 0 0;
-    color: #666;
+    color: var(--text-muted, #94a3b8);
     font-size: 14px;
 }
 
@@ -37,56 +39,97 @@
 
 .language-selector {
     padding: 8px 12px;
-    border: 2px solid #ddd;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
     border-radius: 6px;
+    background: var(--bg-card, #1e1e2e);
+    color: var(--text-primary, #f8fafc);
     font-size: 14px;
     cursor: pointer;
     transition: border-color 0.2s;
 }
 
 .language-selector:hover {
-    border-color: #667eea;
+    border-color: var(--primary-light, #6366f1);
+}
+
+/* Button Styles */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #ffffff !important;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    transform: translateY(-1px);
+    color: #ffffff !important;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-primary.btn-large {
+    padding: 14px 28px;
+    font-size: 1rem;
 }
 
 .btn-secondary {
-    padding: 10px 18px;
-    background: #ffffff;
-    border: 1.5px solid #6366f1;
-    color: #4f46e5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    text-decoration: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: #4f46e5;
-    color: #ffffff;
-    border-color: #4f46e5;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
 }
 
 .btn-secondary:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-    color: #94a3b8;
-    border-color: #cbd5e1;
-    background: #f8fafc;
+    transform: none;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Progress Bar */
 .progress-section {
-    background: white;
+    background: var(--bg-card, #1e1e2e);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     padding: 16px 24px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .progress-info {
@@ -94,20 +137,20 @@
     justify-content: space-between;
     margin-bottom: 12px;
     font-size: 14px;
-    color: #666;
+    color: var(--text-muted, #94a3b8);
 }
 
 .progress-bar {
     width: 100%;
     height: 8px;
-    background: #f0f0f0;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #6366f1, #a855f7);
     transition: width 0.3s ease;
 }
 
@@ -121,10 +164,10 @@
 }
 
 .teaching-area {
-    background: white;
+    background: var(--bg-card, #1e1e2e);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     padding: 32px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     min-height: 500px;
 }
 
@@ -137,7 +180,6 @@
         opacity: 0;
         transform: translateY(10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -152,21 +194,21 @@
 
 .teaching-section.welcome h2 {
     font-size: 32px;
-    color: #333;
+    color: var(--text-primary, #f8fafc);
     margin-bottom: 20px;
 }
 
 .teaching-section.welcome p {
     font-size: 16px;
-    color: #666;
+    color: var(--text-secondary, #cbd5e1);
     margin-bottom: 12px;
     line-height: 1.6;
 }
 
 /* Concept Card */
 .concept-card {
-    background: #f8f9ff;
-    border-left: 4px solid #667eea;
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 4px solid var(--primary-light, #6366f1);
     padding: 20px;
     border-radius: 8px;
     margin: 24px 0;
@@ -174,18 +216,18 @@
 
 .concept-card h3 {
     margin: 0 0 12px 0;
-    color: #667eea;
+    color: var(--primary-light, #818cf8);
 }
 
 /* Question Section */
 .teaching-section.question-section h2 {
-    color: #333;
+    color: var(--text-primary, #f8fafc);
     margin-bottom: 24px;
 }
 
 .question-card {
-    background: #f8f9ff;
-    border: 2px solid #e0e0ff;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
     padding: 24px;
     margin-bottom: 20px;
@@ -194,7 +236,7 @@
 .question-text {
     font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary, #f8fafc);
     margin: 0 0 20px 0;
     line-height: 1.6;
 }
@@ -207,32 +249,34 @@
 
 .option-btn {
     padding: 12px 16px;
-    background: white;
-    border: 2px solid #ddd;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
     border-radius: 6px;
     text-align: left;
     cursor: pointer;
     transition: all 0.2s;
     font-size: 15px;
-    color: #333;
+    color: var(--text-primary, #f8fafc);
 }
 
 .option-btn:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
+    border-color: var(--primary-light, #6366f1);
+    background: rgba(99, 102, 241, 0.12);
 }
 
 .option-btn.selected {
-    background: #667eea;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
     color: white;
-    border-color: #667eea;
+    border-color: transparent;
 }
 
 .answer-input {
     width: 100%;
     padding: 12px;
-    border: 2px solid #ddd;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
     border-radius: 6px;
+    color: var(--text-primary, #f8fafc);
     font-family: inherit;
     font-size: 14px;
     resize: vertical;
@@ -241,28 +285,27 @@
 
 .answer-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--primary-light, #6366f1);
 }
 
 .guidance-box {
-    background: #fff8e1;
+    background: rgba(245, 158, 11, 0.1);
     border-left: 4px solid #f59e0b;
     padding: 16px 20px;
     border-radius: 8px;
     margin-top: 16px;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
 }
 
 .guidance-box h4 {
     margin: 0 0 8px 0;
-    color: #d97706;
+    color: #f59e0b;
     font-size: 1rem;
     font-weight: 600;
 }
 
 .guidance-box p {
     margin: 0;
-    color: #334155;
+    color: var(--text-secondary, #cbd5e1);
     font-size: 0.95rem;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -270,49 +313,49 @@
 
 /* Evaluation Section */
 .teaching-section.evaluation h2 {
-    color: #333;
+    color: var(--text-primary, #f8fafc);
     margin-bottom: 24px;
 }
 
 .evaluation-card {
-    background: #f8f9ff;
+    background: rgba(255, 255, 255, 0.02);
     border-radius: 8px;
     padding: 24px;
     margin-bottom: 20px;
 }
 
 .evaluation-card.correct {
-    border-left: 6px solid #4caf50;
+    border-left: 6px solid #10b981;
 }
 
 .evaluation-card.incorrect {
-    border-left: 6px solid #f44336;
+    border-left: 6px solid #f43f5e;
 }
 
 .score-display {
     text-align: center;
     margin-bottom: 24px;
     padding-bottom: 20px;
-    border-bottom: 2px solid #e0e0ff;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
 .score-display h3 {
     font-size: 48px;
     margin: 0;
-    color: #667eea;
+    color: var(--primary-light, #818cf8);
 }
 
 .score-display p {
     margin: 8px 0 0 0;
     font-size: 18px;
-    color: #666;
+    color: var(--text-muted, #94a3b8);
 }
 
 .feedback h4,
 .misconceptions h4,
 .explanation h4 {
     margin: 16px 0 8px 0;
-    color: #333;
+    color: var(--text-primary, #f8fafc);
     font-size: 16px;
 }
 
@@ -323,7 +366,7 @@
 
 .misconceptions li {
     margin: 8px 0;
-    color: #666;
+    color: var(--text-secondary, #cbd5e1);
     font-size: 14px;
     line-height: 1.5;
 }
@@ -336,74 +379,40 @@
     flex-wrap: wrap;
 }
 
-.btn-primary {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 15px;
-    transition: all 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-primary.btn-large {
-    padding: 16px 32px;
-    font-size: 16px;
-}
-
 /* Completion Section */
 .teaching-section.complete {
     text-align: center;
     padding: 40px 20px;
 }
 
-.teaching-section.complete h2 {
-    font-size: 32px;
-    color: #667eea;
-    margin-bottom: 30px;
-}
-
 .completion-card {
-    background: #f8f9ff;
-    border: 2px solid #667eea;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 12px;
     padding: 32px;
-    margin-bottom: 30px;
+    margin: 24px 0;
 }
 
 .final-score {
     font-size: 24px;
-    font-weight: 600;
-    color: #667eea;
-    margin: 0 0 12px 0;
+    font-weight: bold;
+    color: var(--primary-light, #818cf8);
+    margin-bottom: 12px;
 }
 
 .concepts-learned {
     font-size: 18px;
-    color: #666;
-    margin: 0 0 12px 0;
+    color: var(--text-secondary, #cbd5e1);
+    margin-bottom: 16px;
 }
 
 .encouragement {
-    font-size: 16px;
-    color: #666;
+    font-size: 15px;
+    color: var(--text-muted, #94a3b8);
     line-height: 1.6;
-    margin: 0;
 }
 
-/* Sidebar */
+/* Sidebar Area */
 .sidebar {
     display: flex;
     flex-direction: column;
@@ -413,30 +422,25 @@
 .status-card,
 .rag-chat-panel,
 .concepts-card {
-    background: white;
+    background: var(--bg-card, #1e1e2e);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 24px;
 }
 
 .status-card h3,
 .rag-chat-panel h3,
 .concepts-card h3 {
     margin: 0 0 16px 0;
-    font-size: 16px;
-    color: #333;
-    border-bottom: 2px solid #f0f0f0;
-    padding-bottom: 12px;
+    font-size: 18px;
+    color: var(--text-primary, #f8fafc);
 }
 
 .status-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 14px;
-    color: #666;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .status-item:last-child {
@@ -444,66 +448,55 @@
 }
 
 .status-item label {
-    font-weight: 500;
+    color: var(--text-muted, #94a3b8);
+    font-size: 14px;
 }
 
 .status-item span {
-    color: #333;
     font-weight: 600;
+    color: var(--text-primary, #f8fafc);
+    font-size: 14px;
 }
 
 .status-item .score {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-.info-text {
-    font-size: 13px;
-    color: #666;
-    line-height: 1.5;
-    margin: 0 0 12px 0;
-}
-
-.full-width {
-    width: 100%;
+    color: #10b981;
 }
 
 .concepts-list {
     list-style: none;
-    margin: 0;
     padding: 0;
-    font-size: 14px;
-    color: #666;
+    margin: 0;
 }
 
 .concepts-list li {
-    padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-secondary, #cbd5e1);
 }
 
-.concepts-list li:last-child {
-    border-bottom: none;
+.info-text {
+    font-size: 14px;
+    color: var(--text-muted, #94a3b8);
+    line-height: 1.5;
+    margin-bottom: 16px;
 }
 
-.concepts-list li:before {
-    content: "✓ ";
-    color: #4caf50;
-    font-weight: bold;
-    margin-right: 8px;
+.btn-secondary.full-width {
+    width: 100%;
 }
 
 /* Error Message */
 .error-message {
-    background: white;
+    background: rgba(244, 63, 94, 0.1);
+    border: 1px solid rgba(244, 63, 94, 0.3);
     border-radius: 12px;
     padding: 40px;
     text-align: center;
-    color: #f44336;
+    color: #f43f5e;
     font-size: 18px;
     margin-bottom: 20px;
 }
@@ -530,13 +523,5 @@
     .btn-primary,
     .btn-secondary {
         width: 100%;
-    }
-
-    .score-display h3 {
-        font-size: 36px;
-    }
-
-    .teaching-section.welcome h2 {
-        font-size: 24px;
     }
 }

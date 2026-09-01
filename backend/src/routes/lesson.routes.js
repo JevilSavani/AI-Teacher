@@ -14,6 +14,8 @@ router.post('/topic', LessonController.createTopicLesson);
 router.post('/:id/start', LessonController.startLesson);
 
 // Teaching interactions
+router.get('/progression/next', LessonController.getNextProgression);
+router.get('/:id/progression/next', LessonController.getNextProgression);
 router.post('/:id/ask', LessonController.askTopicLesson);
 router.get('/:id/next-step', LessonController.getNextStep);
 router.get('/:id/question', LessonController.getQuestion);
