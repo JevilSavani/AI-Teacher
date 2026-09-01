@@ -5,6 +5,8 @@ const profileRoutes = require('./profile.routes');
 const lessonRoutes = require('./lesson.routes');
 const documentRoutes = require('./document.routes');
 const recommendationRoutes = require('./recommendation.routes');
+const assessmentRoutes = require('./assessment.routes');
+const analyticsRoutes = require('./analytics.routes');
 
 const router = express.Router();
 
@@ -15,5 +17,7 @@ router.use('/profile', profileRoutes);
 router.use('/lessons', lessonRoutes);
 router.use('/documents', documentRoutes);
 router.use('/recommendations', recommendationRoutes);
+router.use('/assessments', assessmentRoutes);
+router.use('/analytics', analyticsRoutes);
 
 module.exports = router;

@@ -16,6 +16,7 @@ import MyMaterialsPage from './pages/MyMaterialsPage';
 import RagChatPage from './pages/RagChatPage';
 import TopicLearningPage from './pages/TopicLearningPage';
 import ClassroomPage from './pages/ClassroomPage';
+import ProgressPage from './pages/ProgressPage';
 
 /**
  * Root redirect — send authenticated users to dashboard, guests to home
@@ -90,6 +91,7 @@ function AppRoutes() {
 
       {/* Protected routes wrapped with Navbar (for now) */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
       <Route path="/materials" element={<ProtectedRoute><><Navbar /><MyMaterialsPage /></></ProtectedRoute>} />
       <Route path="/materials/upload" element={<ProtectedRoute><><Navbar /><UploadMaterialPage /></></ProtectedRoute>} />
       <Route path="/materials/:id/chat" element={<ProtectedRoute><><Navbar /><RagChatPage /></></ProtectedRoute>} />

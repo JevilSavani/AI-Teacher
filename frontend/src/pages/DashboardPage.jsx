@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  GraduationCap, BookOpen, Globe, Target, Brain,
-  Clock, TrendingUp, Flame, Settings, Plus,
-  Award, ChevronRight, BarChart2, Sparkles
+import { 
+  BookOpen, Target, Clock, TrendingUp, Flame, Plus, 
+  Sparkles, ChevronRight, BarChart2, Zap, Award
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import lessonService from '../services/lessonService';
+import { assessmentService } from '../services/assessmentService';
+import { analyticsService } from '../services/analyticsService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import Sidebar from '../components/Sidebar';
 
 const LEVEL_COLORS = {
   beginner: 'var(--accent-emerald)',
-  intermediate: 'var(--accent-cyan)',
-  advanced: 'var(--primary-light)',
-  expert: 'var(--accent-amber)',
+  intermediate: 'var(--primary-light)',
+  advanced: 'var(--accent-purple)',
+  expert: 'var(--accent-rose)',
 };
 
 const LEVEL_LABELS = {
@@ -23,302 +25,185 @@ const LEVEL_LABELS = {
   expert: '⭐ Expert',
 };
 
-const EDUCATION_LABELS = {
-  middle_school: 'Middle School',
-  high_school: 'High School',
-  undergraduate: 'Undergraduate',
-  graduate: 'Graduate',
-  professional: 'Professional',
-  self_learner: 'Self Learner',
-};
-
-const STYLE_LABELS = {
-  socratic: '💬 Socratic',
-  explanatory: '📖 Explanatory',
-  visual: '🎨 Visual',
-  practical: '🛠 Practical',
-  mixed: '🔀 Mixed',
-};
-
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
   const [lessons, setLessons] = useState([]);
   const [lessonsLoading, setLessonsLoading] = useState(true);
   const [recommendations, setRecommendations] = useState([]);
   const [recsLoading, setRecsLoading] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const firstName = user?.name?.split(' ')[0] || 'Student';
   const level = profile?.knowledge_level;
   const levelColor = LEVEL_COLORS[level] || 'var(--primary-light)';
   const levelLabel = LEVEL_LABELS[level] || 'Not set';
-  const memberSince = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    : 'Recently';
 
-  // Load lessons & recommendations on mount
+  // Load lessons, recommendations, & analytics on mount
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLessonsLoading(true);
         setRecsLoading(true);
-        const [lessonsData, recsData] = await Promise.all([
+        setAnalyticsLoading(true);
+        const [lessonsData, recsData, analyticsData] = await Promise.all([
           lessonService.getLessons(),
-          lessonService.getRecommendations()
+          lessonService.getRecommendations(),
+          analyticsService.getAnalytics()
         ]);
         setLessons(lessonsData || []);
         setRecommendations(recsData || []);
+        setAnalytics(analyticsData || null);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
         setLessons([]);
         setRecommendations([]);
+        setAnalytics(null);
       } finally {
         setLessonsLoading(false);
         setRecsLoading(false);
+        setAnalyticsLoading(false);
       }
     };
     loadDashboardData();
   }, []);
 
-  // Calculate real stats from persisted database records
-  const totalLessons = lessons.length;
-  const completedConceptsSet = new Set();
-  const conceptProgressList = [];
-  let totalScoreSum = 0;
-  let scoredLessonsCount = 0;
-
-  lessons.forEach((lesson) => {
-    const teachingState =
-      typeof lesson.teaching_state === 'string'
-        ? JSON.parse(lesson.teaching_state || '{}')
-        : lesson.teaching_state || {};
-
-    const lessonPlan =
-      typeof lesson.lesson_plan === 'string'
-        ? JSON.parse(lesson.lesson_plan || '{}')
-        : lesson.lesson_plan || {};
-
-    const completed = teachingState.completedConcepts || [];
-    completed.forEach((c) => completedConceptsSet.add(c));
-
-    if (typeof teachingState.understandingScore === 'number' && teachingState.understandingScore > 0) {
-      totalScoreSum += teachingState.understandingScore;
-      scoredLessonsCount++;
-    }
-
-    const concepts = lessonPlan.concepts || [];
-    const masteryMap = teachingState.conceptMastery || {};
-
-    concepts.forEach((c) => {
-      const title = typeof c === 'object' ? (c.title || c.conceptTitle) : String(c);
-      let masteryPct = 0;
-      if (masteryMap[title] !== undefined) {
-        masteryPct = masteryMap[title];
-      } else if (completed.includes(title)) {
-        masteryPct = 85;
-      }
-      conceptProgressList.push({
-        title,
-        lessonTopic: lesson.topic,
-        mastery: Math.min(100, Math.max(0, masteryPct))
-      });
-    });
-  });
-
-  const avgScoreFormatted = scoredLessonsCount > 0
-    ? `${Math.round(totalScoreSum / scoredLessonsCount)}%`
-    : '—';
-
   const stats = [
-    { icon: <Flame size={20} />, label: 'Day Streak', value: totalLessons > 0 ? '1' : '0', color: 'var(--accent-amber)' },
-    { icon: <BookOpen size={20} />, label: 'Lessons', value: String(totalLessons), color: 'var(--accent-cyan)' },
-    { icon: <Award size={20} />, label: 'Concepts Mastered', value: String(completedConceptsSet.size), color: 'var(--accent-emerald)' },
-    { icon: <TrendingUp size={20} />, label: 'Avg. Score', value: avgScoreFormatted, color: 'var(--primary-light)' },
+    {
+      icon: <TrendingUp size={20} />,
+      label: 'Overall Progress',
+      value: `${analytics?.overallProgressPercentage || 0}%`,
+      color: '#6366f1'
+    },
+    {
+      icon: <Zap size={20} />,
+      label: 'Questions Attempted',
+      value: `${analytics?.questionsAttempted || 0}`,
+      color: '#ec4899'
+    },
+    {
+      icon: <BookOpen size={20} />,
+      label: 'Lessons Completed',
+      value: `${analytics?.lessonsCompleted || 0} / ${analytics?.totalLessons || lessons.length}`,
+      color: '#06b6d4'
+    },
+    {
+      icon: <Flame size={20} />,
+      label: 'Learning Streak',
+      value: `${analytics?.learningStreakDays || 0} Days`,
+      color: '#f59e0b'
+    }
   ];
 
   return (
-    <div className="dashboard-page">
-      {/* Sidebar */}
-      <aside className="dashboard-sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-icon">
-            <GraduationCap size={20} />
-          </div>
-          <span className="brand-text-gradient">AI Teacher</span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            id="tab-overview"
-            className={`sidebar-link${activeTab === 'overview' ? ' sidebar-link-active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            <BarChart2 size={18} />
-            Overview
-          </button>
-          <button
-            id="tab-lessons"
-            className={`sidebar-link${activeTab === 'lessons' ? ' sidebar-link-active' : ''}`}
-            onClick={() => setActiveTab('lessons')}
-          >
-            <BookOpen size={18} />
-            Lessons
-          </button>
-          <button
-            id="tab-progress"
-            className={`sidebar-link${activeTab === 'progress' ? ' sidebar-link-active' : ''}`}
-            onClick={() => setActiveTab('progress')}
-          >
-            <TrendingUp size={18} />
-            Progress
-          </button>
-        </nav>
-
-        <div className="sidebar-profile">
-          <Link to="/profile/setup" id="sidebar-profile-link" className="sidebar-profile-link">
-            <div className="sidebar-avatar">
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
-            <div className="sidebar-profile-info">
-              <span className="sidebar-profile-name">{user?.name}</span>
-              <span className="sidebar-profile-level" style={{ color: levelColor }}>
-                {levelLabel}
-              </span>
-            </div>
-            <Settings size={14} style={{ color: 'var(--text-muted)', marginLeft: 'auto' }} />
-          </Link>
-        </div>
-      </aside>
+    <div className="dashboard-page" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+      {/* Shared Sidebar */}
+      <Sidebar activeRoute="/dashboard" />
 
       {/* Main content */}
-      <main className="dashboard-main">
+      <main className="dashboard-main" style={{ flex: 1, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
         {/* Top bar */}
-        <div className="dashboard-topbar">
+        <div className="dashboard-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
-            <h1 className="dashboard-greeting">
+            <h1 className="dashboard-greeting" style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>
               Good {getTimeOfDay()}, <span className="brand-text-gradient">{firstName}</span> 👋
             </h1>
-            <p className="dashboard-date">
+            <p className="dashboard-date" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <Link to="/learn/topic" id="btn-new-lesson" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
             <Plus size={16} />
-            New Lesson
+            Generate Course
           </Link>
         </div>
 
         {/* Stats row */}
-        <div className="dashboard-stats">
+        <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
           {stats.map(({ icon, label, value, color }) => (
-            <div key={label} className="stat-card">
-              <div className="stat-icon" style={{ color, background: `${color}18` }}>
+            <div key={label} className="stat-card" style={{ padding: '1.25rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div className="stat-icon" style={{ width: '42px', height: '42px', borderRadius: '10px', color, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {icon}
               </div>
               <div className="stat-info">
-                <span className="stat-value">{value}</span>
-                <span className="stat-label">{label}</span>
+                <span className="stat-value" style={{ fontSize: '1.35rem', fontWeight: '800', display: 'block', color: 'var(--text-primary)' }}>{value}</span>
+                <span className="stat-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</span>
               </div>
             </div>
           ))}
         </div>
 
         {/* Content grid */}
-        <div className="dashboard-grid">
-          {/* Profile Summary Card */}
-          <div className="card dashboard-profile-card">
-            <div className="card-header">
-              <Sparkles size={18} color="var(--primary-light)" />
-              <h2>Your Learning Profile</h2>
-              <Link to="/profile/setup" className="card-edit-link">Edit</Link>
-            </div>
-            <div className="profile-info-list">
-              <ProfileRow
-                icon={<Brain size={15} />}
-                label="Level"
-                value={levelLabel}
-                valueColor={levelColor}
-              />
-              <ProfileRow
-                icon={<GraduationCap size={15} />}
-                label="Education"
-                value={EDUCATION_LABELS[profile?.education_level] || 'Not set'}
-              />
-              <ProfileRow
-                icon={<Globe size={15} />}
-                label="Language"
-                value={profile?.preferred_language || 'English'}
-              />
-              <ProfileRow
-                icon={<BookOpen size={15} />}
-                label="Style"
-                value={STYLE_LABELS[profile?.teaching_style] || 'Not set'}
-              />
-              <ProfileRow
-                icon={<Clock size={15} />}
-                label="Daily Time"
-                value={profile?.available_time_minutes ? `${profile.available_time_minutes} min` : 'Not set'}
-              />
-              <ProfileRow
-                icon={<Target size={15} />}
-                label="Goal"
-                value={profile?.learning_goal || 'Not set'}
-                multiline
-              />
-            </div>
-            <p className="profile-member-since">Member since {memberSince}</p>
-          </div>
-
-          {/* Right column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* Recommended for You */}
-            <div className="card">
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Sparkles size={18} color="var(--primary-light)" />
-                <h2>Recommended for You</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+          {/* Left Column: Recent Lessons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="card" style={{ padding: '1.5rem' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BookOpen size={18} color="var(--accent-cyan)" />
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Recent Lessons</h2>
+                </div>
+                <Link to="/learn/topic" style={{ fontSize: '0.85rem', color: 'var(--primary-light)', textDecoration: 'none', fontWeight: '600' }}>
+                  View All
+                </Link>
               </div>
-              {recsLoading ? (
-                <div style={{ padding: '1rem' }}><LoadingSpinner /></div>
-              ) : recommendations.length === 0 ? (
-                <div className="empty-state">
-                  <p className="empty-title">No recommendations yet</p>
-                  <p className="empty-desc">Complete practice questions to receive personalized recommendations.</p>
+
+              {lessonsLoading ? (
+                <div style={{ padding: '2rem' }}><LoadingSpinner /></div>
+              ) : lessons.length === 0 ? (
+                <div className="empty-state" style={{ padding: '2rem', textAlign: 'center' }}>
+                  <p className="empty-title" style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No active lessons</p>
+                  <p className="empty-desc" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    Generate your first AI-powered lesson to begin learning.
+                  </p>
+                  <button onClick={() => navigate('/learn/topic')} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                    <Plus size={14} /> Start First Lesson
+                  </button>
                 </div>
               ) : (
-                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {recommendations.map((rec) => (
-                    <div
-                      key={rec.id}
-                      style={{
-                        padding: '1rem',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                        border: '1px solid rgba(99, 102, 241, 0.2)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--primary-light)' }}>
-                          {rec.recommendation}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {lessons.slice(0, 4).map((lesson) => (
+                    <div key={lesson.id} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h3 style={{ fontSize: '0.95rem', fontWeight: '700', margin: '0 0 0.25rem', color: 'var(--text-primary)' }}>{lesson.topic}</h3>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {lesson.level} &bull; {lesson.duration_minutes} min
                         </span>
-                        {rec.topic && (
-                          <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-secondary)' }}>
-                            {rec.topic}
-                          </span>
-                        )}
                       </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
-                        <strong>Reason:</strong> {rec.reason}
-                      </p>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                        <button
-                          onClick={() => navigate(rec.link || `/classroom/${rec.lessonId}`)}
-                          className="btn-primary"
-                          style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-                        >
+                      <button onClick={() => navigate(`/classroom/${lesson.id}`)} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        Continue <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Recommended for You & Compact Progress Link */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Recommended for You */}
+            <div className="card" style={{ padding: '1.5rem' }}>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <Sparkles size={18} color="var(--primary-light)" />
+                <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Recommended for You</h2>
+              </div>
+
+              {recsLoading ? (
+                <div style={{ padding: '1.5rem' }}><LoadingSpinner /></div>
+              ) : recommendations.length === 0 ? (
+                <div className="empty-state" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <p className="empty-title" style={{ fontSize: '0.9rem' }}>No recommendations yet</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {recommendations.slice(0, 2).map((rec) => (
+                    <div key={rec.id} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--primary-light)' }}>{rec.recommendation}</span>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>{rec.reason}</p>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                        <button onClick={() => navigate(rec.link || `/classroom/${rec.lessonId}`)} className="btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
                           {rec.actionLabel || 'Start Practice'} <ChevronRight size={14} />
                         </button>
                       </div>
@@ -328,120 +213,35 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Recent Lessons */}
-            <div className="card">
-              <div className="card-header">
-                <BookOpen size={18} color="var(--accent-cyan)" />
-                <h2>Recent Lessons</h2>
+            {/* Compact Progress Summary Card */}
+            <div className="card" style={{ padding: '1.5rem' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <TrendingUp size={18} color="#10b981" />
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Progress Summary</h2>
+                </div>
+                <Link to="/progress" style={{ fontSize: '0.85rem', color: 'var(--primary-light)', fontWeight: '600', textDecoration: 'none' }}>
+                  Full Report &rarr;
+                </Link>
               </div>
-              {lessonsLoading ? (
-                <div style={{ padding: '1rem' }}><LoadingSpinner /></div>
-              ) : lessons.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">
-                    <BookOpen size={32} />
-                  </div>
-                  <p className="empty-title">No lessons yet</p>
-                  <p className="empty-desc">
-                    Start your first AI-powered lesson to begin learning.
-                  </p>
-                  <button
-                    onClick={() => navigate('/learn/topic')}
-                    className="btn-primary"
-                    style={{ marginTop: '1rem', fontSize: '0.85rem', padding: '0.5rem 1rem' }}
-                  >
-                    <Plus size={14} />
-                    Start First Lesson
-                  </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Accuracy Rate</span>
+                  <span style={{ fontWeight: '700', color: '#10b981' }}>{analytics?.accuracyRate || 0}%</span>
                 </div>
-              ) : (
-                <div className="lessons-list">
-                  {lessons.slice(0, 5).map((lesson) => (
-                    <div key={lesson.id} className="lesson-card">
-                      <div className="lesson-header">
-                        <h3 className="lesson-title">{lesson.topic}</h3>
-                        <span className="lesson-level" style={{ background: LEVEL_COLORS[lesson.level?.toLowerCase()] || 'var(--primary-light)' }}>
-                          {lesson.level}
-                        </span>
-                      </div>
-                      <p className="lesson-status">{lesson.status || 'created'}</p>
-                      <div className="lesson-footer">
-                        <span className="lesson-duration">{lesson.duration_minutes} min</span>
-                        <button
-                          onClick={() => navigate(`/classroom/${lesson.id}`)}
-                          className="btn-lesson"
-                        >
-                          Continue <ChevronRight size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Mastered Concepts</span>
+                  <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{analytics?.completedConceptsCount || 0}</span>
                 </div>
-              )}
-            </div>
-
-            {/* Progress Overview */}
-            <div className="card">
-              <div className="card-header">
-                <TrendingUp size={18} color="var(--accent-emerald)" />
-                <h2>Progress Overview</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Weak Concepts</span>
+                  <span style={{ fontWeight: '700', color: '#f43f5e' }}>{analytics?.weakConcepts?.length || 0}</span>
+                </div>
               </div>
-              {conceptProgressList.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">
-                    <BarChart2 size={32} />
-                  </div>
-                  <p className="empty-title">No progress data yet</p>
-                  <p className="empty-desc">
-                    Complete lessons to track mastery and see your growth.
-                  </p>
-                </div>
-              ) : (
-                <div className="progress-placeholder" style={{ padding: '1rem' }}>
-                  {conceptProgressList.slice(0, 5).map((item, idx) => (
-                    <div key={idx} className="progress-row" style={{ marginBottom: '0.85rem' }}>
-                      <span className="progress-label" style={{ fontWeight: '500', fontSize: '0.85rem' }}>
-                        {item.title}
-                      </span>
-                      <div className="progress-bar-track" style={{ flex: 1, height: '8px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div
-                          className="progress-bar-fill"
-                          style={{
-                            width: `${item.mastery}%`,
-                            height: '100%',
-                            background: item.mastery >= 70
-                              ? 'linear-gradient(90deg, #10b981, #059669)'
-                              : 'linear-gradient(90deg, #6366f1, #a855f7)',
-                            transition: 'width 0.4s ease'
-                          }}
-                        />
-                      </div>
-                      <span className="progress-pct" style={{ fontWeight: '600', fontSize: '0.85rem', color: item.mastery >= 70 ? '#10b981' : 'var(--text-secondary)' }}>
-                        {item.mastery}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-function ProfileRow({ icon, label, value, valueColor, multiline }) {
-  return (
-    <div className="profile-row">
-      <span className="profile-row-icon" style={{ color: 'var(--text-muted)' }}>{icon}</span>
-      <span className="profile-row-label">{label}</span>
-      <span
-        className={`profile-row-value${multiline ? ' profile-row-value-multiline' : ''}`}
-        style={valueColor ? { color: valueColor } : {}}
-      >
-        {value}
-      </span>
     </div>
   );
 }

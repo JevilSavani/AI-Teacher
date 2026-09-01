@@ -105,6 +105,50 @@ class ProgressService {
     };
   }
 
+  async updateConceptMastery(userId, lessonId, conceptTitle, isCorrect, score) {
+    if (!userId || !lessonId || !conceptTitle) return null;
+
+    const lessonResult = await db.query(
+      `SELECT * FROM lessons WHERE id = $1 AND user_id = $2`,
+      [lessonId, userId]
+    );
+
+    if (lessonResult.rows.length === 0) return null;
+
+    const lesson = lessonResult.rows[0];
+    const teachingState =
+      typeof lesson.teaching_state === 'string'
+        ? JSON.parse(lesson.teaching_state || '{}')
+        : lesson.teaching_state || {};
+
+    const conceptMastery = teachingState.conceptMastery || {};
+    const completedConcepts = new Set(teachingState.completedConcepts || []);
+    const currentMastery = conceptMastery[conceptTitle] || 0;
+
+    let newMastery = isCorrect
+      ? Math.min(100, Math.max(currentMastery + 20, score || 80))
+      : Math.max(0, currentMastery - 15);
+
+    conceptMastery[conceptTitle] = newMastery;
+
+    if (newMastery >= 70) {
+      completedConcepts.add(conceptTitle);
+    }
+
+    teachingState.conceptMastery = conceptMastery;
+    teachingState.completedConcepts = Array.from(completedConcepts);
+    teachingState.understandingScore = Math.round(
+      Object.values(conceptMastery).reduce((a, b) => a + b, 0) / (Object.keys(conceptMastery).length || 1)
+    );
+
+    await db.query(
+      `UPDATE lessons SET teaching_state = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+      [JSON.stringify(teachingState), lessonId, userId]
+    );
+
+    return teachingState;
+  }
+
   async getWeakConcepts(studentId) {
     const progress = await this.getStudentProgress(studentId);
     return progress.weakConcepts;

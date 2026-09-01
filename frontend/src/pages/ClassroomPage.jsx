@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import lessonService from '../services/lessonService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import QuizModal from '../components/QuizModal';
 import '../assets/styles/classroom.css';
 
 export default function ClassroomPage() {
@@ -24,6 +25,7 @@ export default function ClassroomPage() {
     const [teachingPhase, setTeachingPhase] = useState('explanation');
     const [language, setLanguage] = useState('English');
     const [showRagChat, setShowRagChat] = useState(false);
+    const [showQuizModal, setShowQuizModal] = useState(false);
 
     // ---------------------------------------------------------
     // LOAD LESSON
@@ -403,6 +405,16 @@ export default function ClassroomPage() {
                             Chinese
                         </option>
                     </select>
+
+                    <button
+                        onClick={() =>
+                            setShowQuizModal(true)
+                        }
+                        className="btn-primary"
+                        style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem' }}
+                    >
+                        Take Quiz
+                    </button>
 
                     <button
                         onClick={() =>
@@ -1022,6 +1034,14 @@ export default function ClassroomPage() {
                 </div>
 
             </div>
+
+            <QuizModal
+                isOpen={showQuizModal}
+                onClose={() => setShowQuizModal(false)}
+                lessonId={lessonId}
+                topic={lesson?.topic}
+                onComplete={loadLesson}
+            />
 
         </div>
     );
