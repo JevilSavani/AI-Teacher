@@ -1,4 +1,5 @@
 const llmProvider = require('./llmProvider');
+const visualService = require('./visualService');
 
 /**
  * Lesson Planning Service
@@ -49,7 +50,13 @@ Required JSON structure:
         "Point 2"
       ],
       "example": "Real world example",
-      "practice_question": "Question to test understanding"
+      "practice_question": "Question to test understanding",
+      "visual": {
+        "type": "mermaid" | "svg" | "html_steps" | "code",
+        "title": "Diagram Title in ${language}",
+        "caption": "Short explanation in ${language}",
+        "content": "Mermaid diagram text or code or SVG string"
+      }
     }
   ],
   "teaching_strategy": "Description of how to teach this topic",
@@ -251,7 +258,8 @@ Make sure the response is valid JSON that can be parsed directly with JSON.parse
                         'Importance'
                     ],
                     example: 'Real-world application',
-                    practice_question: `What is ${topic}?`
+                    practice_question: `What is ${topic}?`,
+                    visual: visualService.getFallbackVisual(`Introduction to ${topic}`, topic, language)
                 },
 
                 {
@@ -266,7 +274,8 @@ Make sure the response is valid JSON that can be parsed directly with JSON.parse
                     ],
                     example: 'Applied example',
                     practice_question:
-                        'How do the principles apply here?'
+                        'How do the principles apply here?',
+                    visual: visualService.getFallbackVisual(`Core Principles of ${topic}`, topic, language)
                 },
 
                 {
@@ -281,7 +290,8 @@ Make sure the response is valid JSON that can be parsed directly with JSON.parse
                     ],
                     example: 'Complex scenario',
                     practice_question:
-                        'How would you approach this problem?'
+                        'How would you approach this problem?',
+                    visual: visualService.getFallbackVisual(`Applications of ${topic}`, topic, language)
                 }
             ],
 

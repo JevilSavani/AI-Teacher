@@ -1,4 +1,5 @@
 const llmProvider = require('./llmProvider');
+const visualService = require('./visualService');
 
 class TopicLearningService {
   /**
@@ -57,7 +58,7 @@ Format:
   }
 
   /**
-   * Explains a specific section of a topic
+   * Explains a specific section of a topic with an accompanying visual diagram
    */
   async explainTopicSection(courseTopic, sectionTitle, level = 'Intermediate', language = 'English') {
     const systemPrompt = `You are an expert AI Teacher. 
@@ -68,10 +69,17 @@ CRITICAL LANGUAGE RULE:
 Write your explanation strictly in ${language}. Do NOT write in Spanish or German unless ${language} is explicitly set to Spanish or German.
 
 Explain the following specific section: "${sectionTitle}".
-Keep your explanation clear, engaging, and age/level appropriate. Use analogies and examples where helpful.
-Keep the explanation concise (200-300 words).`;
+Keep your explanation clear, engaging, and age/level appropriate. Use analogies, step-by-step points, and examples where helpful.
+If applicable, include a Mermaid diagram block (using \`\`\`mermaid ... \`\`\`) or code block (using \`\`\`language ... \`\`\`) inside your explanation.
+Keep the text clean and educational (200-300 words).`;
 
-    return llmProvider.generateCompletion(`Please explain: ${sectionTitle}`, systemPrompt);
+    const explanationText = await llmProvider.generateCompletion(`Please explain: ${sectionTitle}`, systemPrompt);
+    const visual = await visualService.generateVisualExplanation(sectionTitle, courseTopic, language, level);
+
+    return {
+      explanation: explanationText,
+      visual
+    };
   }
 }
 

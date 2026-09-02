@@ -77,6 +77,23 @@ class LLMProvider {
 
     return content;
   }
+
+  async generateImage(prompt) {
+    this._checkConfig();
+    try {
+      if (typeof this.openai.images?.generate === 'function') {
+        const response = await this.openai.images.generate({
+          prompt,
+          n: 1,
+          size: '512x512',
+        });
+        return response.data?.[0]?.url || null;
+      }
+    } catch (err) {
+      console.warn('[LLM] Image generation unavailable or failed:', err.message);
+    }
+    return null;
+  }
 }
 
 module.exports = new LLMProvider();

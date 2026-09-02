@@ -4,6 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import lessonService from '../services/lessonService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import QuizModal from '../components/QuizModal';
+import MarkdownRenderer from '../components/MarkdownRenderer';
+import VisualExplanation from '../components/VisualExplanation';
 import '../assets/styles/classroom.css';
 
 export default function ClassroomPage() {
@@ -546,39 +548,84 @@ export default function ClassroomPage() {
 
                     {/* EXPLANATION */}
                     {lesson.status === 'in_progress' &&
-                        teachingPhase === 'explanation' && (
+                        teachingPhase === 'explanation' && (() => {
+                        const planObj = typeof lesson?.lesson_plan === 'string' ? JSON.parse(lesson.lesson_plan || '{}') : (lesson?.lesson_plan || {});
+                        const conceptsList = planObj?.concepts || [];
+                        const activeIdx = status?.currentConceptIndex || 0;
+                        const activeConcept = conceptsList[activeIdx] || conceptsList[0] || null;
 
+                        return (
                         <div className="teaching-section explanation">
 
                             <h2>
-                                📚 Concept Explanation
+                                📚 Concept Explanation & Visual Learning
                             </h2>
 
-                            <div className="concept-card">
+                            <div className="concept-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-                                <h3>
-                                    Let's explore the
-                                    next concept...
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                                    {activeConcept?.title || lesson.topic}
                                 </h3>
 
-                                <p>
-                                    Click the button below
-                                    to get your first
-                                    question and begin
-                                    interactive teaching.
-                                </p>
+                                {/* 1. Concept Explanation */}
+                                {activeConcept?.description && (
+                                    <div className="concept-description">
+                                        <MarkdownRenderer content={activeConcept.description} />
+                                    </div>
+                                )}
+
+                                {/* 2. Key Points */}
+                                {activeConcept?.teaching_points && Array.isArray(activeConcept.teaching_points) && activeConcept.teaching_points.length > 0 && (
+                                    <div className="teaching-points" style={{ padding: '1rem 1.25rem', background: 'var(--bg-secondary, #1e293b)', borderRadius: '10px', border: '1px solid var(--border-color, #334155)' }}>
+                                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: '700', color: 'var(--primary-light, #818cf8)' }}>
+                                            🎯 Key Teaching Points
+                                        </h4>
+                                        <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                                            {activeConcept.teaching_points.map((pt, pIdx) => (
+                                                <li key={pIdx} style={{ margin: '0.35rem 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                                    <MarkdownRenderer content={String(pt)} />
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* 3. Example / Code Snippet */}
+                                {activeConcept?.example && (
+                                    <div className="concept-example">
+                                        <MarkdownRenderer content={activeConcept.example} />
+                                    </div>
+                                )}
+
+                                {/* 4 & 5 & 6. Visual Diagrams & Code Blocks */}
+                                {activeConcept?.visual && (
+                                    <VisualExplanation visual={activeConcept.visual} title={activeConcept.title} />
+                                )}
+
+                                {/* 7. Key Takeaway */}
+                                {activeConcept?.practice_question && (
+                                    <div className="key-takeaway-card" style={{ padding: '0.85rem 1.2rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', borderLeft: '4px solid #10b981', color: 'var(--text-primary)' }}>
+                                        <span style={{ fontWeight: '700', color: '#10b981' }}>💡 Key Takeaway: </span>
+                                        <span>Mastering {activeConcept.title || 'this concept'} unlocks deeper understanding across {lesson.topic}.</span>
+                                    </div>
+                                )}
 
                             </div>
 
-                            <button
-                                onClick={getNextQuestion}
-                                className="btn-primary"
-                            >
-                                Get Question
-                            </button>
+                            {/* 8. Practice & Get Questions Button */}
+                            <div style={{ marginTop: '1.5rem' }}>
+                                <button
+                                    onClick={getNextQuestion}
+                                    className="btn-primary btn-large"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    Practice & Get Questions &rarr;
+                                </button>
+                            </div>
 
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {/* QUESTION */}
                     {teachingPhase === 'question' &&
@@ -725,20 +772,22 @@ export default function ClassroomPage() {
                                         💭 Guidance
                                     </h4>
 
-                                    <p>
-                                        {typeof guidance === 'object' && guidance !== null
-                                            ? guidance.teacherResponse || guidance.guidance || JSON.stringify(guidance)
-                                            : typeof guidance === 'string'
-                                            ? (() => {
-                                                  try {
-                                                      const parsed = JSON.parse(guidance);
-                                                      return parsed?.teacherResponse || parsed?.guidance || guidance;
-                                                  } catch {
-                                                      return guidance;
-                                                  }
-                                              })()
-                                            : guidance}
-                                    </p>
+                                    <MarkdownRenderer 
+                                        content={
+                                            typeof guidance === 'object' && guidance !== null
+                                                ? guidance.teacherResponse || guidance.guidance || JSON.stringify(guidance)
+                                                : typeof guidance === 'string'
+                                                ? (() => {
+                                                      try {
+                                                          const parsed = JSON.parse(guidance);
+                                                          return parsed?.teacherResponse || parsed?.guidance || guidance;
+                                                      } catch {
+                                                          return guidance;
+                                                      }
+                                                  })()
+                                                : guidance
+                                        } 
+                                    />
 
                                 </div>
                             )}
@@ -786,12 +835,14 @@ export default function ClassroomPage() {
                                             Feedback
                                         </h4>
 
-                                        <p>
-                                            {String(
-                                                evaluation.feedback
-                                            )}
-                                        </p>
+                                        <MarkdownRenderer content={String(evaluation.feedback)} />
 
+                                    </div>
+                                )}
+
+                                {(evaluation.visualRemediation || evaluation.visual) && (
+                                    <div className="remedial-visual-section" style={{ margin: '1rem 0' }}>
+                                        <VisualExplanation visual={evaluation.visualRemediation || evaluation.visual} />
                                     </div>
                                 )}
 
@@ -819,9 +870,7 @@ export default function ClassroomPage() {
                                                     <li
                                                         key={index}
                                                     >
-                                                        {String(
-                                                            misconception
-                                                        )}
+                                                        <MarkdownRenderer content={String(misconception)} />
                                                     </li>
                                                 )
                                             )}
@@ -839,11 +888,7 @@ export default function ClassroomPage() {
                                             📖 Explanation
                                         </h4>
 
-                                        <p>
-                                            {String(
-                                                evaluation.explanation
-                                            )}
-                                        </p>
+                                        <MarkdownRenderer content={String(evaluation.explanation)} />
 
                                     </div>
                                 )}

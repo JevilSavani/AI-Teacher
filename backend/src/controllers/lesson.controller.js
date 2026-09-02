@@ -7,6 +7,7 @@ const questionGenerator = require('../services/ai/questionGenerator');
 const answerEvaluator = require('../services/ai/answerEvaluator');
 const adaptiveTeaching = require('../services/ai/adaptiveTeaching');
 const teachingEngine = require('../services/ai/teachingEngine');
+const visualService = require('../services/ai/visualService');
 
 /**
  * Lesson Controller
@@ -203,7 +204,7 @@ class LessonController {
 
       const lesson = checkResult.rows[0];
 
-      const explanation =
+      const explanationResult =
         await topicLearning.explainTopicSection(
           lesson.topic,
           sectionTitle,
@@ -211,9 +212,13 @@ class LessonController {
           language || lesson.language || 'English'
         );
 
+      const responseData = typeof explanationResult === 'object' && explanationResult !== null
+        ? explanationResult
+        : { explanation: explanationResult };
+
       return ApiResponse.success(
         res,
-        { explanation },
+        responseData,
         'Explanation generated successfully',
         200
       );
@@ -643,9 +648,19 @@ class LessonController {
           selectedLanguage
         );
 
+      let visualRemediation = null;
+      if (!evaluation.is_correct || (evaluation.score || 0) < 70) {
+        visualRemediation = await visualService.generateRemedialVisual(
+          conceptTitle,
+          teachingState.remedialMisconception || evaluation.feedback || 'Concept review',
+          selectedLanguage
+        );
+      }
+
       const evaluationResult = {
         ...evaluation,
-        should_move_forward: shouldMoveForward
+        should_move_forward: shouldMoveForward,
+        visualRemediation
       };
 
       return ApiResponse.success(
@@ -653,6 +668,7 @@ class LessonController {
         {
           evaluation: evaluationResult,
           feedback,
+          visualRemediation,
           progress: {
             understandingScore: teachingState.understandingScore,
             completedConcepts: teachingState.completedConcepts || [],

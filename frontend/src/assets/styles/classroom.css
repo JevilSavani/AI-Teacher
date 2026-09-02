@@ -525,3 +525,33 @@
         width: 100%;
     }
 }
+
+/* Visual Explanation & Markdown Styling */
+.visual-card {
+    transition: all 0.3s ease;
+}
+
+.visual-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.rendered-markdown p {
+    margin: 0.6rem 0;
+    line-height: 1.7;
+}
+
+.rendered-markdown h2,
+.rendered-markdown h3,
+.rendered-markdown h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.rendered-markdown ul,
+.rendered-markdown ol {
+    padding-left: 1.4rem;
+}
+
+.rendered-markdown code {
+    font-family: Consolas, Monaco, monospace;
+}

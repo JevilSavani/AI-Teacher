@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Sparkles, ChevronDown, ChevronRight, Loader } from 'lucide-react';
 import { lessonService } from '../services/lessonService';
 import { useAuth } from '../context/AuthContext';
+import MarkdownRenderer from '../components/MarkdownRenderer';
+import VisualExplanation from '../components/VisualExplanation';
 
 export default function TopicLearningPage() {
   const { profile } = useAuth();
@@ -29,6 +31,7 @@ export default function TopicLearningPage() {
   const [activeTopic, setActiveTopic] = useState(null);
   
   const [explanation, setExplanation] = useState('');
+  const [explanationVisual, setExplanationVisual] = useState(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [lessonId, setLessonId] = useState(null);
 
@@ -41,6 +44,7 @@ export default function TopicLearningPage() {
       setError('');
       setOutline(null);
       setExplanation('');
+      setExplanationVisual(null);
       setActiveTopic(null);
       
       const result = await lessonService.createTopicLesson(topic, level, language);
@@ -72,10 +76,17 @@ export default function TopicLearningPage() {
     try {
       setIsExplaining(true);
       setExplanation('');
+      setExplanationVisual(null);
       
       const currentLessonId = targetLessonId || lessonId;
       const result = await lessonService.askTopicLesson(currentLessonId, topicName, level, language);
-      setExplanation(result.explanation || result.data?.explanation || 'No explanation generated.');
+      
+      const explanationData = result.explanation || result.data?.explanation || result;
+      const expText = typeof explanationData === 'string' ? explanationData : (explanationData?.explanation || 'No explanation generated.');
+      const expVisual = explanationData?.visual || result.visual || result.data?.visual || null;
+
+      setExplanation(expText);
+      setExplanationVisual(expVisual);
     } catch (err) {
       console.error('Error getting explanation:', err);
       setExplanation('Failed to load explanation for this topic.');
@@ -230,16 +241,12 @@ export default function TopicLearningPage() {
                   </div>
                 ) : (
                   <div>
-                    <div 
-                      style={{ 
-                        fontSize: '1.05rem', 
-                        lineHeight: '1.8', 
-                        color: 'var(--text-primary)',
-                        whiteSpace: 'pre-wrap'
-                      }}
-                    >
-                      {explanation}
-                    </div>
+                    <MarkdownRenderer content={explanation} />
+                    {explanationVisual && (
+                      <div style={{ marginTop: '1.5rem' }}>
+                        <VisualExplanation visual={explanationVisual} title={activeTopic} />
+                      </div>
+                    )}
 
                     {explanation && lessonId && (
                       <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
