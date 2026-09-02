@@ -7,6 +7,7 @@ const documentRoutes = require('./document.routes');
 const recommendationRoutes = require('./recommendation.routes');
 const assessmentRoutes = require('./assessment.routes');
 const analyticsRoutes = require('./analytics.routes');
+const avatarRoutes = require('./avatar.routes');
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.use('/documents', documentRoutes);
 router.use('/recommendations', recommendationRoutes);
 router.use('/assessments', assessmentRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/avatar', avatarRoutes);
 
 module.exports = router;

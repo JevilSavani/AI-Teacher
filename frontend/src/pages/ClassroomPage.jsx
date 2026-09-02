@@ -438,6 +438,14 @@ export default function ClassroomPage() {
                     </select>
 
                     <button
+                        onClick={() => navigate(`/teach/${lessonId}`)}
+                        className="btn-primary"
+                        style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem', background: 'linear-gradient(135deg, #6366f1, #ec4899)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                        🎥 Start AI Teacher
+                    </button>
+
+                    <button
                         onClick={() =>
                             setShowQuizModal(true)
                         }

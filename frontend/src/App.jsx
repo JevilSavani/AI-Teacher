@@ -17,6 +17,7 @@ import RagChatPage from './pages/RagChatPage';
 import TopicLearningPage from './pages/TopicLearningPage';
 import ClassroomPage from './pages/ClassroomPage';
 import ProgressPage from './pages/ProgressPage';
+import TeachingVideoPage from './pages/TeachingVideoPage';
 
 /**
  * Root redirect — send authenticated users to dashboard, guests to home
@@ -97,6 +98,7 @@ function AppRoutes() {
       <Route path="/materials/:id/chat" element={<ProtectedRoute><><Navbar /><RagChatPage /></></ProtectedRoute>} />
       <Route path="/learn/topic" element={<ProtectedRoute><><Navbar /><TopicLearningPage /></></ProtectedRoute>} />
       <Route path="/classroom/:id" element={<ProtectedRoute><ClassroomPage /></ProtectedRoute>} />
+      <Route path="/teach/:lessonId" element={<ProtectedRoute><TeachingVideoPage /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

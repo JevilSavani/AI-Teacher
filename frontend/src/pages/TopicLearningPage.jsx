@@ -263,13 +263,20 @@ export default function TopicLearningPage() {
                     )}
 
                     {explanation && lessonId && (
-                      <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
+                      <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                         <button
-                          onClick={() => navigate(`/classroom/${lessonId}`)}
+                          onClick={() => navigate(`/teach/${lessonId}`)}
                           className="btn-primary"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'linear-gradient(135deg, #6366f1, #ec4899)', border: 'none' }}
                         >
                           <Sparkles size={16} />
+                          🎥 Start AI Teacher
+                        </button>
+                        <button
+                          onClick={() => navigate(`/classroom/${lessonId}`)}
+                          className="btn-secondary"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
                           Practice & Get Questions
                         </button>
                       </div>
