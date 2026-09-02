@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FileText, MessageSquare, Trash2, Plus, Clock, CheckCircle, AlertCircle, RefreshCw, Folder, ChevronRight, ChevronDown, GraduationCap, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { FileText, MessageSquare, Trash2, Plus, Clock, CheckCircle, AlertCircle, RefreshCw, Folder, ChevronRight, ChevronDown, GraduationCap, Sparkles, Upload } from 'lucide-react';
 import { documentService } from '../services/documentService';
 import { lessonService } from '../services/lessonService';
 import { useAuth } from '../context/AuthContext';
@@ -8,11 +8,14 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 export default function MyMaterialsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile } = useAuth();
+  const fileInputRef = useRef(null);
+  
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isPolling, setIsPolling] = useState(false);
+  const [isUploadingInline, setIsUploadingInline] = useState(false);
 
   // Teaching setup state
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -24,8 +27,8 @@ export default function MyMaterialsPage() {
   const [expandedDocIds, setExpandedDocIds] = useState({});
 
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    fetchDocuments(documents.length === 0);
+  }, [location.pathname, location.state]);
 
   useEffect(() => {
     if (profile?.knowledge_level) setSelectedLevel(profile.knowledge_level);
@@ -39,30 +42,64 @@ export default function MyMaterialsPage() {
     );
     
     let intervalId;
-    if (hasProcessingDocs && !isPolling) {
-      setIsPolling(true);
+    if (hasProcessingDocs) {
       intervalId = setInterval(() => {
         fetchDocuments(false);
-      }, 5000);
-    } else if (!hasProcessingDocs && isPolling) {
-      setIsPolling(false);
+      }, 2500);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [documents, isPolling]);
+  }, [documents]);
 
   const fetchDocuments = async (showSpinner = true) => {
     try {
-      if (showSpinner) setLoading(true);
+      if (showSpinner && documents.length === 0) setLoading(true);
       const data = await documentService.getDocuments();
-      setDocuments(data);
+      
+      // Deduplicate items by id
+      const uniqueMap = new Map();
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          if (item && item.id) uniqueMap.set(item.id, item);
+        });
+      }
+      
+      setDocuments(Array.from(uniqueMap.values()));
       setError('');
     } catch (err) {
       setError('Failed to load documents.');
     } finally {
       if (showSpinner) setLoading(false);
+    }
+  };
+
+  const handleInlineFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingInline(true);
+      setError('');
+
+      const uploadedDoc = await documentService.uploadDocument(file, file.name.replace(/\.[^/.]+$/, ""));
+      
+      // Immediately add/update uploaded document in local state
+      setDocuments(prev => {
+        const map = new Map();
+        if (uploadedDoc && uploadedDoc.id) map.set(uploadedDoc.id, uploadedDoc);
+        prev.forEach(d => map.set(d.id, d));
+        return Array.from(map.values());
+      });
+
+      // Refetch in background to ensure sync
+      fetchDocuments(false);
+    } catch (err) {
+      setError(err.message || 'Failed to upload document.');
+    } finally {
+      setIsUploadingInline(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -141,6 +178,13 @@ export default function MyMaterialsPage() {
 
   return (
     <div className="page-container" style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
+        onChange={handleInlineFileSelect}
+      />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.5rem' }}>
@@ -150,10 +194,21 @@ export default function MyMaterialsPage() {
             Select specific chapters or sections to generate targeted lessons with your AI Teacher.
           </p>
         </div>
-        <Link to="/materials/upload" className="btn-primary" style={{ textDecoration: 'none' }}>
-          <Plus size={18} />
-          Upload New
-        </Link>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            className="btn-primary" 
+            disabled={isUploadingInline}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {isUploadingInline ? <RefreshCw size={18} className="spin-animation" /> : <Upload size={18} />}
+            {isUploadingInline ? 'Uploading...' : 'Quick Upload'}
+          </button>
+          <Link to="/materials/upload" className="btn-secondary" style={{ textDecoration: 'none' }}>
+            <Plus size={18} />
+            Upload Studio
+          </Link>
+        </div>
       </div>
 
       {error && (

@@ -28,7 +28,7 @@ export const documentService = {
    * Get all user documents
    */
   getDocuments: async () => {
-    const response = await api.get('/documents');
+    const response = await api.get(`/documents?t=${Date.now()}`);
 
     if (!response.ok) {
       throw new Error(response.message || 'Failed to load documents');

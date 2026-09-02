@@ -86,8 +86,8 @@ export default function UploadMaterialPage() {
         }
       });
 
-      // Redirect to materials page on success
-      navigate('/materials');
+      // Redirect to materials page on success with state trigger
+      navigate('/materials', { state: { refreshed: Date.now() }, replace: true });
     } catch (err) {
       console.error('Upload error:', err);
       setError(err.message || 'Failed to upload document. Please try again.');
