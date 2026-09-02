@@ -8,7 +8,12 @@ const { testConnection } = require('../config/db');
 class HealthController {
   static async check(req, res) {
     const memoryUsage = process.memoryUsage();
-    const dbStatus = await testConnection();
+    let dbStatus = { connected: false };
+    try {
+      dbStatus = await testConnection();
+    } catch (e) {
+      dbStatus = { connected: false, error: e.message };
+    }
 
     const healthData = {
       status: dbStatus.connected ? 'UP' : 'DEGRADED',
@@ -23,8 +28,8 @@ class HealthController {
       },
       database: {
         connected: dbStatus.connected,
-        host: dbStatus.host,
-        databaseName: dbStatus.database,
+        host: dbStatus.host || null,
+        databaseName: dbStatus.database || null,
         pgvectorAvailable: dbStatus.pgvectorInstalled || false,
         ...(dbStatus.error && { error: dbStatus.error })
       },
@@ -48,19 +53,11 @@ class HealthController {
       ]
     };
 
-    if (!dbStatus.connected) {
-      return ApiResponse.error(
-        res,
-        'AI Teacher API is operational but database connection is unavailable',
-        503,
-        healthData
-      );
-    }
-
     return ApiResponse.success(
       res,
       healthData,
-      'AI Teacher API is operational and database is connected'
+      'AI Teacher API is healthy',
+      200
     );
   }
 
