@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar';
 
 /**
- * AuthenticatedLayout — Unified production sidebar layout for all student dashboard pages.
+ * AuthenticatedLayout — Unified production sidebar and top header layout for all student dashboard pages.
  */
 export default function AuthenticatedLayout({ children, activeRoute }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -13,12 +14,16 @@ export default function AuthenticatedLayout({ children, activeRoute }) {
   };
 
   return (
-    <div className="app-authenticated-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
+    <div className="app-authenticated-layout" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
       
-      {/* Sidebar container (Desktop: static fixed sidebar, Mobile: slide-out drawer) */}
-      <div className={`sidebar-wrapper ${mobileSidebarOpen ? 'mobile-sidebar-open' : ''}`}>
-        <Sidebar activeRoute={activeRoute} onCloseMobile={handleCloseMobile} />
-      </div>
+      {/* Top Horizontal Navbar */}
+      <Navbar />
+
+      <div style={{ display: 'flex', flex: 1, position: 'relative', width: '100%' }}>
+        {/* Sidebar container (Desktop: static fixed sidebar, Mobile: slide-out drawer) */}
+        <div className={`sidebar-wrapper ${mobileSidebarOpen ? 'mobile-sidebar-open' : ''}`}>
+          <Sidebar activeRoute={activeRoute} onCloseMobile={handleCloseMobile} />
+        </div>
 
       {/* Mobile Header Bar */}
       <div className="mobile-navbar-header">
@@ -46,6 +51,7 @@ export default function AuthenticatedLayout({ children, activeRoute }) {
           onClick={handleCloseMobile}
         />
       )}
+      </div>
     </div>
   );
 }
