@@ -5,6 +5,7 @@ import { documentService } from '../services/documentService';
 import { lessonService } from '../services/lessonService';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 export default function MyMaterialsPage() {
   const navigate = useNavigate();
@@ -170,14 +171,17 @@ export default function MyMaterialsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        <LoadingSpinner />
-      </div>
+      <AuthenticatedLayout activeRoute="/materials">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+          <LoadingSpinner />
+        </div>
+      </AuthenticatedLayout>
     );
   }
 
   return (
-    <div className="page-container" style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
+    <AuthenticatedLayout activeRoute="/materials">
+      <div className="page-container" style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -474,6 +478,7 @@ export default function MyMaterialsPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </AuthenticatedLayout>
   );
 }

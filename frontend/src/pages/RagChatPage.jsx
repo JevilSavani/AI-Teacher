@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Send, ArrowLeft, FileText, User, Bot, AlertCircle } from 'lucide-react';
 import { documentService } from '../services/documentService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 export default function RagChatPage() {
   const { id } = useParams();
@@ -81,14 +82,17 @@ export default function RagChatPage() {
 
   if (isPageLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        <LoadingSpinner />
-      </div>
+      <AuthenticatedLayout activeRoute="/materials">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+          <LoadingSpinner />
+        </div>
+      </AuthenticatedLayout>
     );
   }
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)' }}>
+    <AuthenticatedLayout activeRoute="/materials">
+      <div className="page-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{ 
         padding: '1rem 2rem', 
@@ -326,6 +330,7 @@ export default function RagChatPage() {
           40% { transform: scale(1); }
         }
       `}</style>
-    </div>
+      </div>
+    </AuthenticatedLayout>
   );
 }

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { profileService } from '../services/profileService';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 const EDUCATION_LEVELS = [
   { value: 'middle_school', label: 'Middle School' },
@@ -113,7 +114,7 @@ export default function ProfileSetupPage() {
     }
   };
 
-  return (
+  const pageContent = (
     <div className="setup-page">
       <div className="setup-container">
         {/* Header */}
@@ -305,4 +306,14 @@ export default function ProfileSetupPage() {
       </div>
     </div>
   );
+
+  if (hasProfile) {
+    return (
+      <AuthenticatedLayout activeRoute="/profile/setup">
+        {pageContent}
+      </AuthenticatedLayout>
+    );
+  }
+
+  return pageContent;
 }

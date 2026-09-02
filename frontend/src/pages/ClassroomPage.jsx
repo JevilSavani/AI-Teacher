@@ -8,6 +8,7 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import VisualExplanation from '../components/VisualExplanation';
 import VoicePlayer from '../components/VoicePlayer';
 import speechService from '../utils/speechService';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 import '../assets/styles/classroom.css';
 
 export default function ClassroomPage() {
@@ -385,7 +386,8 @@ export default function ClassroomPage() {
     // UI
     // ---------------------------------------------------------
     return (
-        <div className="classroom-container">
+        <AuthenticatedLayout activeRoute="/learn/topic">
+            <div className="classroom-container">
 
             {/* HEADER */}
             <div className="classroom-header">
@@ -1182,5 +1184,6 @@ export default function ClassroomPage() {
             />
 
         </div>
+        </AuthenticatedLayout>
     );
 }

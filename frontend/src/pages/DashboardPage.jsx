@@ -9,7 +9,7 @@ import lessonService from '../services/lessonService';
 import { assessmentService } from '../services/assessmentService';
 import { analyticsService } from '../services/analyticsService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import Sidebar from '../components/Sidebar';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 const LEVEL_COLORS = {
   beginner: 'var(--accent-emerald)',
@@ -97,11 +97,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="dashboard-page" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Shared Sidebar */}
-      <Sidebar activeRoute="/dashboard" />
-
-      {/* Main content */}
+    <AuthenticatedLayout activeRoute="/dashboard">
       <main className="dashboard-main" style={{ flex: 1, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
         {/* Top bar */}
         <div className="dashboard-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -109,140 +105,130 @@ export default function DashboardPage() {
             <h1 className="dashboard-greeting" style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>
               Good {getTimeOfDay()}, <span className="brand-text-gradient">{firstName}</span> 👋
             </h1>
-            <p className="dashboard-date" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem', margin: 0 }}>
+              Welcome to your personal learning hub
             </p>
           </div>
-          <Link to="/learn/topic" id="btn-new-lesson" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-            <Plus size={16} />
-            Generate Course
-          </Link>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-color)', color: levelColor, fontWeight: '600' }}>
+              {levelLabel}
+            </span>
+            <Link to="/learn/topic" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Plus size={16} /> New Lesson
+            </Link>
+          </div>
         </div>
 
-        {/* Stats row */}
-        <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-          {stats.map(({ icon, label, value, color }) => (
-            <div key={label} className="stat-card" style={{ padding: '1.25rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div className="stat-icon" style={{ width: '42px', height: '42px', borderRadius: '10px', color, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {icon}
+        {/* Stats Row */}
+        <div className="grid-4" style={{ gap: '1.25rem', marginBottom: '2rem' }}>
+          {stats.map((s, idx) => (
+            <div key={idx} className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, flexShrink: 0 }}>
+                {s.icon}
               </div>
-              <div className="stat-info">
-                <span className="stat-value" style={{ fontSize: '1.35rem', fontWeight: '800', display: 'block', color: 'var(--text-primary)' }}>{value}</span>
-                <span className="stat-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</span>
+              <div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{s.label}</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '0.15rem' }}>{s.value}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Content grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
-          {/* Left Column: Recent Lessons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <BookOpen size={18} color="var(--accent-cyan)" />
-                  <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Recent Lessons</h2>
-                </div>
-                <Link to="/learn/topic" style={{ fontSize: '0.85rem', color: 'var(--primary-light)', textDecoration: 'none', fontWeight: '600' }}>
-                  View All
+        {/* Grid Section: Recent Lessons & Recommendations */}
+        <div className="grid-2" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
+          {/* Recent Lessons */}
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BookOpen size={18} color="var(--primary-light)" />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0 }}>Recent Lessons</h3>
+              </div>
+              <Link to="/learn/topic" style={{ fontSize: '0.82rem', color: 'var(--primary-light)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                View All <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            {lessonsLoading ? (
+              <LoadingSpinner message="Loading lessons..." />
+            ) : lessons.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>No lessons started yet!</p>
+                <Link to="/learn/topic" className="btn-primary" style={{ padding: '0.45rem 0.95rem', fontSize: '0.82rem' }}>
+                  Start Your First Lesson
                 </Link>
               </div>
-
-              {lessonsLoading ? (
-                <div style={{ padding: '2rem' }}><LoadingSpinner /></div>
-              ) : lessons.length === 0 ? (
-                <div className="empty-state" style={{ padding: '2rem', textAlign: 'center' }}>
-                  <p className="empty-title" style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No active lessons</p>
-                  <p className="empty-desc" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                    Generate your first AI-powered lesson to begin learning.
-                  </p>
-                  <button onClick={() => navigate('/learn/topic')} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                    <Plus size={14} /> Start First Lesson
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {lessons.slice(0, 4).map((lesson) => (
-                    <div key={lesson.id} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: '700', margin: '0 0 0.25rem', color: 'var(--text-primary)' }}>{lesson.topic}</h3>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {lesson.level} &bull; {lesson.duration_minutes} min
-                        </span>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {lessons.slice(0, 4).map((l) => (
+                  <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)' }}>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{l.topic}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                        {l.level} &bull; {l.language || 'English'} &bull; {l.duration_minutes || 20}m
                       </div>
-                      <button onClick={() => navigate(`/classroom/${lesson.id}`)} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        Continue <ChevronRight size={14} />
-                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <Link to={`/classroom/${l.id}`} className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}>
+                      Continue
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Right Column: Recommended for You & Compact Progress Link */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Recommended for You */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <Sparkles size={18} color="var(--primary-light)" />
-                <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Recommended for You</h2>
-              </div>
-
-              {recsLoading ? (
-                <div style={{ padding: '1.5rem' }}><LoadingSpinner /></div>
-              ) : recommendations.length === 0 ? (
-                <div className="empty-state" style={{ padding: '1.5rem', textAlign: 'center' }}>
-                  <p className="empty-title" style={{ fontSize: '0.9rem' }}>No recommendations yet</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {recommendations.slice(0, 2).map((rec) => (
-                    <div key={rec.id} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--primary-light)' }}>{rec.recommendation}</span>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>{rec.reason}</p>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-                        <button onClick={() => navigate(rec.link || `/classroom/${rec.lessonId}`)} className="btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-                          {rec.actionLabel || 'Start Practice'} <ChevronRight size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* AI Recommendations */}
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <Sparkles size={18} color="var(--accent-amber)" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0 }}>Recommended for You</h3>
             </div>
 
-            {/* Compact Progress Summary Card */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <TrendingUp size={18} color="#10b981" />
-                  <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Progress Summary</h2>
-                </div>
-                <Link to="/progress" style={{ fontSize: '0.85rem', color: 'var(--primary-light)', fontWeight: '600', textDecoration: 'none' }}>
-                  Full Report &rarr;
-                </Link>
+            {recsLoading ? (
+              <LoadingSpinner message="Generating recommendations..." />
+            ) : recommendations.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                <p style={{ margin: 0, fontSize: '0.9rem' }}>Complete lessons to receive tailored AI recommendations.</p>
               </div>
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Accuracy Rate</span>
-                  <span style={{ fontWeight: '700', color: '#10b981' }}>{analytics?.accuracyRate || 0}%</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Mastered Concepts</span>
-                  <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{analytics?.completedConceptsCount || 0}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Weak Concepts</span>
-                  <span style={{ fontWeight: '700', color: '#f43f5e' }}>{analytics?.weakConcepts?.length || 0}</span>
-                </div>
+                {recommendations.slice(0, 3).map((rec, idx) => (
+                  <div key={idx} style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>{rec.topic}</div>
+                      <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{rec.difficulty || 'Recommended'}</span>
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.35rem', lineHeight: '1.4' }}>
+                      {rec.reason || 'Builds on your recent learning progress'}
+                    </div>
+                    <button 
+                      onClick={() => navigate('/learn/topic', { state: { presetTopic: rec.topic } })}
+                      className="btn-secondary" 
+                      style={{ marginTop: '0.6rem', padding: '0.3rem 0.65rem', fontSize: '0.75rem', width: '100%', justifyContent: 'center' }}
+                    >
+                      Start Recommended Topic
+                    </button>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Actions Footer Strip */}
+        <div className="card" style={{ padding: '1.25rem 1.5rem', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1))', border: '1px solid rgba(99, 102, 241, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Want to learn from your own study materials?</h4>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Upload PDFs, Word docs, or slides to generate scoped visual lessons.</p>
             </div>
+            <Link to="/materials" className="btn-primary" style={{ padding: '0.5rem 1.1rem', fontSize: '0.85rem' }}>
+              Upload Study Material
+            </Link>
           </div>
         </div>
       </main>
-    </div>
+    </AuthenticatedLayout>
   );
 }
 

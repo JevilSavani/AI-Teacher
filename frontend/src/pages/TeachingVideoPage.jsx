@@ -10,7 +10,7 @@ import AvatarTeacherCanvas from '../components/AvatarTeacherCanvas';
 import VisualExplanation from '../components/VisualExplanation';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import Sidebar from '../components/Sidebar';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 export default function TeachingVideoPage() {
   const { lessonId } = useParams();
@@ -157,7 +157,8 @@ export default function TeachingVideoPage() {
   };
 
   return (
-    <div className="teaching-video-page" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary, #090d16)', color: 'var(--text-primary, #f8fafc)', display: 'flex', flexDirection: 'column' }}>
+    <AuthenticatedLayout activeRoute="/learn/topic">
+      <div className="teaching-video-page" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary, #090d16)', color: 'var(--text-primary, #f8fafc)', display: 'flex', flexDirection: 'column' }}>
       {/* Studio Top Header */}
       <header style={{ padding: '1rem 2rem', background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid var(--border-color, #334155)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -383,6 +384,7 @@ export default function TeachingVideoPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AuthenticatedLayout>
   );
 }

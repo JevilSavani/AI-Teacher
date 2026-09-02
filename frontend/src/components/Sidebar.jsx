@@ -6,14 +6,19 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Sidebar({ activeRoute }) {
+export default function Sidebar({ activeRoute, onCloseMobile }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, logout } = useAuth();
 
   const currentPath = activeRoute || location.pathname;
 
+  const handleLinkClick = () => {
+    if (onCloseMobile) onCloseMobile();
+  };
+
   const handleLogout = async () => {
+    if (onCloseMobile) onCloseMobile();
     await logout();
     navigate('/login');
   };
@@ -28,7 +33,7 @@ export default function Sidebar({ activeRoute }) {
   return (
     <aside className="dashboard-sidebar" style={{ width: '260px', borderRight: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '1.5rem 1rem' }}>
       {/* Brand Logo */}
-      <Link to="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', padding: '0 0.5rem' }}>
+      <Link to="/dashboard" onClick={handleLinkClick} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', padding: '0 0.5rem' }}>
         <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
           <GraduationCap size={22} />
         </div>
@@ -43,6 +48,7 @@ export default function Sidebar({ activeRoute }) {
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleLinkClick}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
                 padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
@@ -61,7 +67,7 @@ export default function Sidebar({ activeRoute }) {
 
       {/* User Profile Footer & Logout */}
       <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <Link to="/profile/setup" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
+        <Link to="/profile/setup" onClick={handleLinkClick} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--text-primary)' }}>
             {user?.name?.charAt(0).toUpperCase() || 'S'}
           </div>

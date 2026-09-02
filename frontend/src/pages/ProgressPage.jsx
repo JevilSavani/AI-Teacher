@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import Sidebar from '../components/Sidebar';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 export default function ProgressPage() {
   const navigate = useNavigate();
@@ -33,9 +33,7 @@ export default function ProgressPage() {
   };
 
   return (
-    <div className="dashboard-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Shared Sidebar with active route highlighting */}
-      <Sidebar activeRoute="/progress" />
+    <AuthenticatedLayout activeRoute="/progress">
 
       {/* Main Content */}
       <main className="dashboard-main" style={{ flex: 1, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -259,6 +257,6 @@ export default function ProgressPage() {
           </div>
         )}
       </main>
-    </div>
+    </AuthenticatedLayout>
   );
 }

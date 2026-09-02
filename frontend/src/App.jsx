@@ -77,26 +77,14 @@ function AppRoutes() {
         }
       />
 
-      {/* Protected: Profile setup (Navbar but no sidebar) */}
-      <Route
-        path="/profile/setup"
-        element={
-          <ProtectedRoute>
-            <>
-              <Navbar />
-              <ProfileSetupPage />
-            </>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Protected routes wrapped with Navbar (for now) */}
+      {/* Protected routes — using unified AuthenticatedLayout sidebar */}
+      <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetupPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
-      <Route path="/materials" element={<ProtectedRoute><><Navbar /><MyMaterialsPage /></></ProtectedRoute>} />
-      <Route path="/materials/upload" element={<ProtectedRoute><><Navbar /><UploadMaterialPage /></></ProtectedRoute>} />
-      <Route path="/materials/:id/chat" element={<ProtectedRoute><><Navbar /><RagChatPage /></></ProtectedRoute>} />
-      <Route path="/learn/topic" element={<ProtectedRoute><><Navbar /><TopicLearningPage /></></ProtectedRoute>} />
+      <Route path="/materials" element={<ProtectedRoute><MyMaterialsPage /></ProtectedRoute>} />
+      <Route path="/materials/upload" element={<ProtectedRoute><UploadMaterialPage /></ProtectedRoute>} />
+      <Route path="/materials/:id/chat" element={<ProtectedRoute><RagChatPage /></ProtectedRoute>} />
+      <Route path="/learn/topic" element={<ProtectedRoute><TopicLearningPage /></ProtectedRoute>} />
       <Route path="/classroom/:id" element={<ProtectedRoute><ClassroomPage /></ProtectedRoute>} />
       <Route path="/teach/:lessonId" element={<ProtectedRoute><TeachingVideoPage /></ProtectedRoute>} />
 

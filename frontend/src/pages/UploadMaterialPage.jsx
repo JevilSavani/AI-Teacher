@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, File, FileText, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { documentService } from '../services/documentService';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 export default function UploadMaterialPage() {
   const navigate = useNavigate();
@@ -105,168 +106,175 @@ export default function UploadMaterialPage() {
   };
 
   return (
-    <div className="page-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <div className="page-header" style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.5rem' }}>
-          Upload <span className="brand-text-gradient">Learning Material</span>
-        </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Upload a PDF, Word document, PowerPoint, or text file. We'll process it so you can chat with it or generate lessons.
-        </p>
-      </div>
+    <AuthenticatedLayout activeRoute="/materials">
+      <div className="page-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+        <div className="page-header" style={{ marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.5rem' }}>
+            Upload <span className="brand-text-gradient">Learning Material</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Upload a PDF, Word document, PowerPoint, or text file. We'll process it so you can chat with it or generate lessons.
+          </p>
+        </div>
 
-      <div className="card" style={{ padding: '2rem' }}>
-        {error && (
-          <div className="auth-alert" style={{ marginBottom: '1.5rem' }}>
-            <AlertCircle size={18} />
-            {error}
-          </div>
-        )}
+        <div className="card" style={{ padding: '2rem' }}>
+          {error && (
+            <div className="auth-alert" style={{ marginBottom: '1.5rem' }}>
+              <AlertCircle size={18} />
+              {error}
+            </div>
+          )}
 
-        {!file ? (
-          <div 
-            className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${isDragging ? 'var(--primary-light)' : 'var(--border-color)'}`,
-              borderRadius: 'var(--radius-lg)',
-              padding: '3rem 2rem',
-              textAlign: 'center',
-              backgroundColor: isDragging ? 'rgba(99, 102, 241, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              marginBottom: '1.5rem'
-            }}
-          >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              style={{ display: 'none' }} 
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
-            />
-            <div style={{ 
-              width: '64px', height: '64px', 
-              borderRadius: '50%', 
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1.5rem',
-              color: 'var(--primary-light)'
-            }}>
-              <Upload size={32} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-              Drag & drop your file here
-            </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-              or click to browse files
-            </p>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <span className="lang-chip">PDF</span>
-              <span className="lang-chip">DOCX</span>
-              <span className="lang-chip">PPTX</span>
-              <span className="lang-chip">TXT</span>
-            </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '1rem' }}>
-              Maximum file size: 50MB
-            </p>
-          </div>
-        ) : (
-          <div className="file-preview" style={{ 
-            border: '1px solid var(--border-color)', 
-            borderRadius: 'var(--radius-md)',
-            padding: '1.5rem',
-            marginBottom: '2rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.02)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ 
-                width: '48px', height: '48px', 
-                borderRadius: 'var(--radius-sm)', 
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--primary-light)',
-                flexShrink: 0
-              }}>
-                <FileText size={24} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h4 style={{ fontWeight: '600', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {file.name}
-                </h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  {(file.size / (1024 * 1024)).toFixed(2)} MB
-                </p>
-              </div>
-              {!isUploading && (
-                <button 
-                  onClick={clearFile}
-                  style={{ 
-                    background: 'none', border: 'none', 
-                    color: 'var(--text-muted)', cursor: 'pointer',
-                    padding: '0.5rem'
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              )}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label">Document Title</label>
+          {!file ? (
+            <div 
+              className={`upload-zone ${isDragging ? 'upload-zone-dragging' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current.click()}
+              style={{
+                border: '2px dashed var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '3rem 2rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                backgroundColor: isDragging ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
+                borderColor: isDragging ? 'var(--primary)' : 'var(--border-color)'
+              }}
+            >
               <input 
-                type="text" 
-                className="form-input" 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="E.g., Intro to Machine Learning Notes"
-                disabled={isUploading}
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                style={{ display: 'none' }}
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
               />
-            </div>
-
-            {isUploading && (
-              <div className="upload-progress" style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Uploading...</span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{uploadProgress}%</span>
-                </div>
-                <div className="progress-bar-track" style={{ height: '8px' }}>
-                  <div 
-                    className="progress-bar-fill" 
-                    style={{ width: `${uploadProgress}%`, transition: 'width 0.2s' }} 
-                  />
-                </div>
+              <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                backgroundColor: 'rgba(99, 102, 241, 0.1)', 
+                color: 'var(--primary-light)',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                margin: '0 auto 1rem'
+              }}>
+                <Upload size={32} />
               </div>
-            )}
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                Drag and drop your file here, or click to browse
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                Supports PDF, DOC, DOCX, PPT, PPTX, TXT (Max 50MB)
+              </p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                padding: '1rem',
+                backgroundColor: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: '1.5rem',
+                border: '1px solid var(--border-color)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ 
+                    padding: '0.5rem', 
+                    borderRadius: 'var(--radius-sm)', 
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    color: 'var(--primary-light)'
+                  }}>
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{file.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                    </div>
+                  </div>
+                </div>
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              {!isUploading && (
-                <button className="btn-secondary" onClick={clearFile}>
+                {!isUploading && (
+                  <button 
+                    onClick={removeFile}
+                    className="btn-secondary"
+                    style={{ padding: '0.35rem 0.5rem', color: 'var(--accent-rose)' }}
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="form-label">Material Title (Optional)</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Chapter 3: Operating Systems Concepts"
+                  disabled={isUploading}
+                />
+              </div>
+
+              {isUploading && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    <span>Processing Document & Extracting Chunks...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div style={{ 
+                    height: '8px', 
+                    backgroundColor: 'var(--bg-secondary)', 
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      height: '100%', 
+                      width: `${uploadProgress}%`, 
+                      backgroundColor: 'var(--primary)',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button 
+                  onClick={() => navigate('/materials')} 
+                  className="btn-secondary"
+                  disabled={isUploading}
+                >
                   Cancel
                 </button>
-              )}
-              <button 
-                className="btn-primary" 
-                onClick={handleUpload}
-                disabled={isUploading || !title.trim()}
-                style={{ minWidth: '140px', justifyContent: 'center' }}
-              >
-                {isUploading ? (
-                  <span className="btn-spinner" />
-                ) : (
-                  <>
-                    <Upload size={16} />
-                    Upload & Process
-                  </>
-                )}
-              </button>
+                <button 
+                  onClick={handleUpload} 
+                  className="btn-primary"
+                  disabled={isUploading}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  {isUploading ? (
+                    <>
+                      <span className="btn-spinner" />
+                      Uploading & Parsing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      Upload & Process
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }

@@ -7,6 +7,7 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import VisualExplanation from '../components/VisualExplanation';
 import VoicePlayer from '../components/VoicePlayer';
 import speechService from '../utils/speechService';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 
 export default function TopicLearningPage() {
   const { profile } = useAuth();
@@ -112,7 +113,8 @@ export default function TopicLearningPage() {
   };
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)' }}>
+    <AuthenticatedLayout activeRoute="/learn/topic">
+      <div className="page-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Search Header */}
       <div style={{ 
         padding: '2rem', 
@@ -321,6 +323,7 @@ export default function TopicLearningPage() {
           </p>
         </div>
       )}
-    </div>
+      </div>
+    </AuthenticatedLayout>
   );
 }
