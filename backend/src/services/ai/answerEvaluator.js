@@ -9,43 +9,46 @@ class AnswerEvaluator {
    * Evaluate a student's answer to a question
    * Returns: score (0-100), feedback, and detected misconceptions
    */
-  async evaluateAnswer(question, studentAnswer, studentLevel = 'Intermediate', language = 'English') {
+  async evaluateAnswer(question, studentAnswer, studentLevel = 'Intermediate', language = 'English', ragContext = null) {
     if (!question || !studentAnswer) {
       throw new Error('Question and studentAnswer are required');
     }
 
-    const systemPrompt = `You are an expert evaluator of student learning.
-You need to evaluate this student answer carefully and provide:
-1. A correctness score (0-100)
-2. Detailed feedback (encouraging but honest)
-3. Any misconceptions detected
-4. Guidance for improvement
+    let docGroundingPrompt = '';
+    if (ragContext) {
+      docGroundingPrompt = `\nDOCUMENT GROUNDING CONTEXT:\n${ragContext}\nEvaluate strictly against this material. Do not hallucinate external facts.`;
+    }
+
+    const systemPrompt = `You are an expert pedagogical evaluator and diagnostic learning scientist.
+Evaluate the student's answer carefully and distinguish:
+- "correct": Score 85-100. Complete, accurate reasoning.
+- "partially_correct": Score 50-84. Correct intuition but incomplete or missing key steps.
+- "incorrect": Score 0-49. Factually wrong answer.
+- "misconception": Score 0-49. Clear underlying flawed logic, assumption, or confused reasoning.
 
 QUESTION:
 ${JSON.stringify(question, null, 2)}
 
+STUDENT ANSWER: "${studentAnswer}"
 STUDENT LEVEL: ${studentLevel}
 LANGUAGE: ${language}
+${docGroundingPrompt}
 
-CRITICAL LANGUAGE RULE: Write feedback, strengths, improvements, misconceptions, and next_step strictly in "${language}". Do NOT translate programming code syntax or SQL keywords incorrectly.
+CRITICAL LANGUAGE RULE: Write feedback, diagnosis, alternative_explanation, new_example, and misconceptions strictly in "${language}". Keep standard programming keywords unchanged.
 
-EVALUATION CRITERIA:
-- Correctness: Is the answer factually correct?
-- Completeness: Does it address all parts of the question?
-- Understanding: Does it show genuine understanding or just memorization?
-- Clarity: Is the reasoning clear?
-- Misconceptions: Are there any incorrect assumptions or misunderstandings?
-
-Return as JSON (ONLY JSON, no explanation):
+Return ONLY valid JSON:
 {
   "score": 0-100,
   "is_correct": true/false,
-  "correctness_confidence": 0-1,
-  "feedback": "Encouraging and helpful feedback",
-  "strengths": ["What they did well"],
-  "improvements": ["What could be better"],
-  "misconceptions": ["Any misconceptions detected"],
-  "next_step": "What should they focus on next",
+  "answer_status": "correct" | "partially_correct" | "incorrect" | "misconception",
+  "feedback": "Honest, encouraging feedback",
+  "diagnosis": "Explain specifically WHY the student's thinking or reasoning is incorrect/incomplete",
+  "alternative_explanation": "Re-explain the concept using a fresh analogy or simplified step-by-step breakdown",
+  "new_example": "A new concrete code snippet or real-world example illustrating the correct concept",
+  "strengths": ["What they understood correctly"],
+  "improvements": ["Specific areas to improve"],
+  "misconceptions": ["Identified misconception"],
+  "next_step": "What they should focus on",
   "should_move_forward": true/false
 }`;
 
@@ -58,8 +61,14 @@ Return as JSON (ONLY JSON, no explanation):
       let jsonStr = response.replace(/```json\n?|\n?```/g, '').trim();
       const evaluation = JSON.parse(jsonStr);
 
+      const isCorrect = evaluation.is_correct || evaluation.score >= 70;
+      const status = evaluation.answer_status || (isCorrect ? 'correct' : (evaluation.score >= 50 ? 'partially_correct' : 'incorrect'));
+
       return {
         ...evaluation,
+        answer_status: status,
+        is_correct: isCorrect,
+        should_move_forward: isCorrect,
         studentAnswer,
         questionId: question.id || null,
         evaluatedAt: new Date().toISOString()
@@ -67,19 +76,22 @@ Return as JSON (ONLY JSON, no explanation):
     } catch (error) {
       console.error('Error evaluating answer:', error);
 
-      // Fallback evaluation
       const isCorrect = this._simpleCheck(studentAnswer, question);
       return {
-        score: isCorrect ? 100 : 0,
+        score: isCorrect ? 100 : 30,
         is_correct: isCorrect,
+        answer_status: isCorrect ? 'correct' : 'incorrect',
         correctness_confidence: 0.7,
         feedback: isCorrect
           ? 'Good job! Your answer is correct.'
-          : 'This answer needs review. Please think more carefully about the question.',
+          : 'This answer needs review. Please think more carefully about the concept.',
+        diagnosis: isCorrect ? null : 'The answer does not match the core requirements of the question.',
+        alternative_explanation: isCorrect ? null : 'Consider breaking down the concept into simpler steps.',
+        new_example: isCorrect ? null : 'Review a basic example before trying again.',
         strengths: isCorrect ? ['Correct understanding'] : [],
         improvements: isCorrect ? [] : ['Review the concept', 'Try again'],
-        misconceptions: [],
-        next_step: isCorrect ? 'Move to next question' : 'Review and try again',
+        misconceptions: isCorrect ? [] : ['Incomplete concept grasp'],
+        next_step: isCorrect ? 'Move to next question' : 'Review re-explanation and re-evaluate',
         should_move_forward: isCorrect,
         studentAnswer,
         evaluatedAt: new Date().toISOString()

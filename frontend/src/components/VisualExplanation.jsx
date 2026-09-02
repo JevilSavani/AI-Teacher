@@ -49,6 +49,30 @@ export default function VisualExplanation({ visual, title, caption }) {
     explicitType = steps.length > 0 ? 'html_steps' : (cleanContent ? 'code' : 'html_steps');
   }
 
+  // Helper to sanitize raw Mermaid code produced by LLMs
+  const sanitizeMermaidCode = (code) => {
+    if (!code) return '';
+    let cleaned = code.trim();
+    
+    // Remove markdown code fences
+    cleaned = cleaned.replace(/^```(mermaid)?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+    // Ensure graph/flowchart header if missing
+    if (!/^(graph|flowchart|sequenceDiagram|stateDiagram|classDiagram|erDiagram|gantt|timeline|mindmap|pie|gitGraph)\b/i.test(cleaned)) {
+      cleaned = `graph TD\n${cleaned}`;
+    }
+
+    // Quote unquoted node labels with parentheses or special chars: e.g. A[Scope Ends (Destructor)] => A["Scope Ends (Destructor)"]
+    cleaned = cleaned.replace(/(\w+)\s*\[([^"'\n\]]+)\]/g, (match, node, label) => {
+      if (label.includes('(') || label.includes(')') || label.includes(':') || label.includes('&')) {
+        return `${node}["${label.replace(/"/g, "'")}"]`;
+      }
+      return match;
+    });
+
+    return cleaned;
+  };
+
   // Render Mermaid Diagram dynamically
   useEffect(() => {
     if (explicitType === 'mermaid' && cleanContent && !mermaidError) {
@@ -61,15 +85,30 @@ export default function VisualExplanation({ visual, title, caption }) {
             startOnLoad: false,
             theme: 'dark',
             securityLevel: 'loose',
+            suppressErrorRendering: true,
             fontFamily: 'Inter, system-ui, sans-serif'
           });
+
+          const sanitized = sanitizeMermaidCode(cleanContent);
+
+          // Pre-validate syntax with parse before rendering
+          if (typeof mermaid.parse === 'function') {
+            await mermaid.parse(sanitized);
+          }
+
           const id = `mermaid-svg-${Math.random().toString(36).substr(2, 9)}`;
-          const { svg } = await mermaid.render(id, cleanContent);
+          const renderRes = await mermaid.render(id, sanitized);
+          const svgStr = typeof renderRes === 'string' ? renderRes : (renderRes?.svg || '');
+
+          if (!svgStr || svgStr.includes('Syntax error in text') || svgStr.includes('mermaid-error') || svgStr.includes('error-icon')) {
+            throw new Error('Mermaid syntax error detected in rendered output');
+          }
+
           if (isMounted) {
-            setMermaidSvg(svg);
+            setMermaidSvg(svgStr);
           }
         } catch (err) {
-          console.warn('[VisualExplanation] Mermaid render error, switching to HTML diagram fallback:', err);
+          console.warn('[VisualExplanation] Mermaid render error, switching to clean HTML diagram fallback:', err);
           if (isMounted) {
             setMermaidError(true);
           }
@@ -78,7 +117,7 @@ export default function VisualExplanation({ visual, title, caption }) {
       renderDiagram();
       return () => { isMounted = false; };
     }
-  }, [explicitType, cleanContent]);
+  }, [explicitType, cleanContent, mermaidError]);
 
   const handleCopyCode = (text) => {
     navigator.clipboard.writeText(text);

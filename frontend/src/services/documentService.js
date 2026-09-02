@@ -68,8 +68,8 @@ export const documentService = {
   /**
    * Ask a question about a document using RAG
    */
-  askDocument: async (id, question) => {
-    const response = await api.post(`/documents/${id}/ask`, { question });
+  askDocument: async (id, question, chapterTitle = null, sectionTitle = null) => {
+    const response = await api.post(`/documents/${id}/ask`, { question, chapterTitle, sectionTitle });
 
     if (!response.ok) {
       throw new Error(response.message || 'Failed to ask document question');

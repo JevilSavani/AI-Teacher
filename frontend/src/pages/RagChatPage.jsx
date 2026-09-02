@@ -44,6 +44,9 @@ export default function RagChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const [selectedChapterTitle, setSelectedChapterTitle] = useState('');
+  const [selectedSectionTitle, setSelectedSectionTitle] = useState('');
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
@@ -54,7 +57,7 @@ export default function RagChatPage() {
     setIsLoading(true);
 
     try {
-      const response = await documentService.askDocument(id, userMessage);
+      const response = await documentService.askDocument(id, userMessage, selectedChapterTitle || null, selectedSectionTitle || null);
       
       // Clean answer by stripping [Source X] markers
       const rawText = typeof response === 'string' ? response : (response?.answer || response?.data?.answer || '');
@@ -107,10 +110,44 @@ export default function RagChatPage() {
         }}>
           <FileText size={16} />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '1rem', fontWeight: '700' }}>{document?.title || 'Unknown Document'}</h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Document Q&A</p>
         </div>
+
+        {document?.structure?.chapters?.length > 0 && (
+          <select 
+            className="form-select"
+            value={selectedSectionTitle || selectedChapterTitle || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (!val) {
+                setSelectedChapterTitle('');
+                setSelectedSectionTitle('');
+              } else if (val.startsWith('chap:')) {
+                setSelectedChapterTitle(val.replace('chap:', ''));
+                setSelectedSectionTitle('');
+              } else if (val.startsWith('sec:')) {
+                const parts = val.replace('sec:', '').split('|||');
+                setSelectedChapterTitle(parts[0] || '');
+                setSelectedSectionTitle(parts[1] || parts[0] || '');
+              }
+            }}
+            style={{ fontSize: '0.85rem', height: '36px', width: '240px' }}
+          >
+            <option value="">📘 Entire Document</option>
+            {document.structure.chapters.map((chap, cIdx) => (
+              <React.Fragment key={cIdx}>
+                <option value={`chap:${chap.title}`}>📂 {chap.title}</option>
+                {chap.sections?.map((sec, sIdx) => (
+                  <option key={sIdx} value={`sec:${chap.title}|||${sec.title}`}>
+                    &nbsp;&nbsp;├─ 📄 {sec.title}
+                  </option>
+                ))}
+              </React.Fragment>
+            ))}
+          </select>
+        )}
       </div>
 
       {error ? (
@@ -171,6 +208,17 @@ export default function RagChatPage() {
                   lineHeight: '1.6'
                 }}>
                   {msg.content}
+
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)', fontSize: '0.8rem', color: 'var(--primary-light)', fontWeight: '600' }}>
+                      {msg.sources.slice(0, 3).map((src, sIdx) => (
+                        <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.2rem' }}>
+                          <span>📌 Source:</span>
+                          <span>{src.source || `Page ${src.index + 1}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {msg.role === 'user' && (

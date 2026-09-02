@@ -4,11 +4,15 @@ export const lessonService = {
   /**
    * Create a new topic-based lesson
    */
-  createTopicLesson: async (topic, level, language) => {
+  createTopicLesson: async (topic, level, language, duration_minutes = 20, material_id = null, chapterTitle = null, sectionTitle = null) => {
     const response = await api.post('/lessons/topic', {
       topic,
       level,
-      language
+      language,
+      duration_minutes,
+      material_id,
+      chapterTitle,
+      sectionTitle
     });
 
     if (!response.ok) {

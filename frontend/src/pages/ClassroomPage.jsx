@@ -399,8 +399,8 @@ export default function ClassroomPage() {
                     <p className="lesson-level">
                         Level: {lesson.level}
                         {' | '}
-                        Duration:{' '}
-                        {lesson.duration_minutes} min
+                        Time Frame:{' '}
+                        {lesson.duration_minutes === 10080 ? '📅 7 Days Plan' : `⏱️ ${lesson.duration_minutes} min`}
                     </p>
 
                 </div>

@@ -15,6 +15,7 @@ export default function TopicLearningPage() {
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState(profile?.knowledge_level || 'beginner');
   const [language, setLanguage] = useState(profile?.preferred_language || 'English');
+  const [durationMinutes, setDurationMinutes] = useState(profile?.available_time_minutes ? String(profile.available_time_minutes) : '20');
 
   useEffect(() => {
     return () => {
@@ -28,6 +29,9 @@ export default function TopicLearningPage() {
     }
     if (profile?.preferred_language) {
       setLanguage(profile.preferred_language);
+    }
+    if (profile?.available_time_minutes) {
+      setDurationMinutes(String(profile.available_time_minutes));
     }
   }, [profile]);
   
@@ -55,7 +59,7 @@ export default function TopicLearningPage() {
       setExplanationVisual(null);
       setActiveTopic(null);
       
-      const result = await lessonService.createTopicLesson(topic, level, language);
+      const result = await lessonService.createTopicLesson(topic, level, language, durationMinutes);
       setOutline(result.metadata);
       setLessonId(result.id);
       
@@ -144,12 +148,26 @@ export default function TopicLearningPage() {
             value={level} 
             onChange={(e) => setLevel(e.target.value)}
             disabled={isLoading}
-            style={{ width: '160px', height: '48px' }}
+            style={{ width: '150px', height: '48px' }}
           >
             <option value="beginner">Beginner</option>
             <option value="intermediate">Intermediate</option>
             <option value="advanced">Advanced</option>
             <option value="expert">Expert</option>
+          </select>
+
+          <select 
+            className="form-select" 
+            value={durationMinutes} 
+            onChange={(e) => setDurationMinutes(e.target.value)}
+            disabled={isLoading}
+            title="Available Learning Time"
+            style={{ width: '190px', height: '48px', fontWeight: '600', color: 'var(--primary-light, #818cf8)' }}
+          >
+            <option value="5">⚡ 5 Minutes (Express)</option>
+            <option value="20">⏱️ 20 Minutes (Standard)</option>
+            <option value="60">⏳ 60 Minutes (Deep Dive)</option>
+            <option value="7_days">📅 7 Days (Personalized Plan)</option>
           </select>
           
           <button 

@@ -78,7 +78,22 @@ class DocumentController {
         `SELECT * FROM learning_materials WHERE user_id = $1 ORDER BY created_at DESC`,
         [userId]
       );
-      return ApiResponse.success(res, result.rows, 'Documents retrieved successfully', 200);
+
+      const docs = result.rows.map(doc => {
+        let structure = null;
+        if (typeof doc.extracted_text === 'string' && doc.extracted_text.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(doc.extracted_text);
+            structure = parsed.structure || null;
+          } catch (e) {}
+        }
+        return {
+          ...doc,
+          structure
+        };
+      });
+
+      return ApiResponse.success(res, docs, 'Documents retrieved successfully', 200);
     } catch (error) {
       next(error);
     }
@@ -96,7 +111,16 @@ class DocumentController {
         return ApiResponse.error(res, 'Document not found', 404);
       }
 
-      return ApiResponse.success(res, result.rows[0], 'Document retrieved successfully', 200);
+      const doc = result.rows[0];
+      let structure = null;
+      if (typeof doc.extracted_text === 'string' && doc.extracted_text.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(doc.extracted_text);
+          structure = parsed.structure || null;
+        } catch (e) {}
+      }
+
+      return ApiResponse.success(res, { ...doc, structure }, 'Document retrieved successfully', 200);
     } catch (error) {
       next(error);
     }
@@ -123,7 +147,7 @@ class DocumentController {
   static async askDocument(req, res, next) {
     try {
       const userId = DocumentController.getUserId(req);
-      const { question } = req.body;
+      const { question, chapterTitle, sectionTitle, concept, level, language, history } = req.body;
       const { id: materialId } = req.params;
 
       if (!question) {
@@ -140,8 +164,24 @@ class DocumentController {
         return ApiResponse.error(res, 'Document not found or not ready', 404);
       }
 
-      // Answer with RAG
-      const answer = await ragService.answerWithRAG(question, materialId);
+      const lessonContext = {
+        materialId,
+        chapterTitle,
+        sectionTitle,
+        concept: concept || sectionTitle || chapterTitle,
+        level: level || 'Intermediate',
+        language: language || 'English'
+      };
+
+      // Answer with RAG with context resolution, section fallback, and multi-turn history
+      const answer = await ragService.answerWithRAG(
+        question, 
+        materialId, 
+        { chapterTitle, sectionTitle },
+        lessonContext,
+        history || []
+      );
+      
       return ApiResponse.success(res, answer, 'Answer generated successfully', 200);
     } catch (error) {
       next(error);

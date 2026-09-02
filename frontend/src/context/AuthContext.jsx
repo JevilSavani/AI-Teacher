@@ -116,8 +116,8 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore logout API errors — always clear local state
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('ai_teacher_token');
+    localStorage.clear();
+    sessionStorage.clear();
     setToken(null);
     setUser(null);
     setProfile(null);

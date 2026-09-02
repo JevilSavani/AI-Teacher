@@ -79,7 +79,10 @@ class LessonController {
         topic,
         level,
         language,
-        duration_minutes
+        duration_minutes,
+        material_id,
+        chapterTitle,
+        sectionTitle
       } = req.body;
 
       if (!topic || !topic.trim()) {
@@ -90,13 +93,53 @@ class LessonController {
         );
       }
 
-      // Query current user's profile to get user-specific default language
-      const userProfile = await StudentProfileService.getProfileByUserId(userId);
-      const userDefaultLanguage = userProfile?.preferred_language || 'English';
+      // Query current user's profile and progress for personalization
+      let userProfile = null;
+      let studentProgress = null;
+      try {
+        userProfile = await StudentProfileService.getProfileByUserId(userId);
+        studentProgress = await ProgressService.getStudentProgress(userId);
+      } catch (e) {
+        console.warn('[LessonController] Optional profile/progress fetch notice:', e.message);
+      }
 
+      const userDefaultLanguage = userProfile?.preferred_language || 'English';
       const selectedLevel = level || userProfile?.knowledge_level || 'Intermediate';
       const selectedLanguage = (language && String(language).trim()) ? String(language).trim() : userDefaultLanguage;
-      const duration = Number(duration_minutes) || 20;
+      
+      const is7Days = duration_minutes === '7_days' || String(duration_minutes).trim() === '7_days';
+      const durationVal = is7Days ? '7_days' : (parseInt(duration_minutes, 10) || 20);
+      const durationDbMinutes = is7Days ? 10080 : (parseInt(durationVal, 10) || 20);
+
+      // Material context fetching if lesson is created from uploaded textbook/material
+      let materialContext = null;
+      if (material_id) {
+        try {
+          const matRes = await db.query(
+            `SELECT * FROM learning_materials WHERE id = $1 AND user_id = $2 AND processing_status = 'ready'`,
+            [material_id, userId]
+          );
+          if (matRes.rows.length > 0) {
+            const material = matRes.rows[0];
+            const chunks = await ragService.retrieveRelevantContext(
+              sectionTitle || chapterTitle || topic,
+              material.id,
+              6,
+              { chapterTitle, sectionTitle }
+            );
+            const ragText = ragService.buildContext(chunks);
+            materialContext = {
+              materialId: material.id,
+              documentTitle: material.title,
+              chapterTitle,
+              sectionTitle,
+              ragText
+            };
+          }
+        } catch (mErr) {
+          console.warn('[LessonController] Error retrieving material RAG context:', mErr.message);
+        }
+      }
 
       // Generate lesson plan using OpenRouter/LLM
       const lessonPlan =
@@ -104,7 +147,9 @@ class LessonController {
           topic.trim(),
           selectedLevel,
           selectedLanguage,
-          duration
+          durationVal,
+          studentProgress,
+          materialContext
         );
 
       if (!lessonPlan) {
@@ -128,11 +173,12 @@ class LessonController {
         language: selectedLanguage
       };
 
-      // Save lesson
+      // Save lesson with material_id reference if provided
       const insertResult = await db.query(
         `INSERT INTO lessons
         (
           user_id,
+          material_id,
           topic,
           level,
           language,
@@ -149,16 +195,18 @@ class LessonController {
           $4,
           $5,
           $6,
+          $7,
           'created',
-          $7
+          $8
         )
         RETURNING *`,
         [
           userId,
+          material_id || null,
           topic.trim(),
           selectedLevel,
           selectedLanguage,
-          duration,
+          durationDbMinutes,
           JSON.stringify(lessonPlan),
           JSON.stringify(teachingState)
         ]
@@ -203,18 +251,43 @@ class LessonController {
       }
 
       const lesson = checkResult.rows[0];
+      let responseData = null;
 
-      const explanationResult =
-        await topicLearning.explainTopicSection(
-          lesson.topic,
-          sectionTitle,
-          level || lesson.level || 'Intermediate',
-          language || lesson.language || 'English'
+      if (lesson.material_id) {
+        const lessonContext = {
+          lesson_id: lesson.id,
+          materialId: lesson.material_id,
+          topic: lesson.topic,
+          concept: sectionTitle || lesson.topic,
+          level: level || lesson.level || 'Intermediate',
+          language: language || lesson.language || 'English'
+        };
+
+        const ragRes = await ragService.answerWithRAG(
+          sectionTitle || lesson.topic,
+          lesson.material_id,
+          {},
+          lessonContext,
+          req.body.history || []
         );
 
-      const responseData = typeof explanationResult === 'object' && explanationResult !== null
-        ? explanationResult
-        : { explanation: explanationResult };
+        responseData = {
+          explanation: ragRes.answer,
+          sources: ragRes.sources || []
+        };
+      } else {
+        const explanationResult =
+          await topicLearning.explainTopicSection(
+            lesson.topic,
+            sectionTitle,
+            level || lesson.level || 'Intermediate',
+            language || lesson.language || 'English'
+          );
+
+        responseData = typeof explanationResult === 'object' && explanationResult !== null
+          ? explanationResult
+          : { explanation: explanationResult };
+      }
 
       return ApiResponse.success(
         res,
@@ -547,12 +620,28 @@ class LessonController {
 
       const selectedLanguage = lesson.language || teachingState.language || 'English';
 
+      // Retrieve RAG context if lesson originates from uploaded document
+      let ragContext = null;
+      if (lesson.material_id) {
+        try {
+          const chunks = await ragService.retrieveRelevantContext(
+            currentConcept?.title || lesson.topic,
+            lesson.material_id,
+            3
+          );
+          ragContext = ragService.buildContext(chunks);
+        } catch (rErr) {
+          console.warn('[submitAnswer] RAG context fetch notice:', rErr.message);
+        }
+      }
+
       const evaluation =
         await answerEvaluator.evaluateAnswer(
           teachingState.currentQuestion,
           answer,
-          lesson.level || 'Intermediate',
-          selectedLanguage
+          teachingState.currentLevel || lesson.level || 'Intermediate',
+          selectedLanguage,
+          ragContext
         );
 
       const response = {
@@ -560,19 +649,17 @@ class LessonController {
         studentAnswer: answer,
         score: evaluation.score,
         isCorrect: evaluation.is_correct,
+        status: evaluation.answer_status,
         feedback: evaluation.feedback,
+        diagnosis: evaluation.diagnosis,
+        alternative_explanation: evaluation.alternative_explanation,
+        new_example: evaluation.new_example,
         misconceptions: evaluation.misconceptions,
         timestamp: new Date().toISOString()
       };
 
-      teachingState.responses =
-        (teachingState.responses || [])
-          .concat([response]);
-
-      teachingState.recentAnswers =
-        (teachingState.recentAnswers || [])
-          .slice(-4)
-          .concat([evaluation]);
+      teachingState.responses = (teachingState.responses || []).concat([response]);
+      teachingState.recentAnswers = (teachingState.recentAnswers || []).slice(-4).concat([evaluation]);
 
       const avgScore =
         teachingState.recentAnswers.reduce(
@@ -581,43 +668,56 @@ class LessonController {
         ) / teachingState.recentAnswers.length;
 
       teachingState.understandingScore = avgScore;
-
       const conceptTitle = currentConcept?.title || lesson.topic || 'Current Concept';
       let shouldMoveForward = false;
 
       // ADAPTIVE INTERVENTION & REMEDIATION LOGIC
       if (!evaluation.is_correct || (evaluation.score || 0) < 70) {
-        // Answer is incorrect or concept is weak -> identify misconception & set remediation mode
+        teachingState.consecutiveFailures = (teachingState.consecutiveFailures || 0) + 1;
+        
         const misconception =
           (evaluation.misconceptions && evaluation.misconceptions.length > 0)
             ? evaluation.misconceptions[0]
-            : (evaluation.feedback || 'Need to review this concept');
+            : (evaluation.diagnosis || evaluation.feedback || 'Need to review this concept');
 
         teachingState.remediationNeeded = true;
         teachingState.remedialMisconception = misconception;
         teachingState.weakConcept = conceptTitle;
         teachingState.misconceptions = (teachingState.misconceptions || []).concat([misconception]);
         
+        // Dynamically adjust difficulty down if student struggles repeatedly
+        if (teachingState.consecutiveFailures >= 2) {
+          teachingState.currentLevel = adaptiveTeaching._decreaseDifficulty(
+            teachingState.currentLevel || lesson.level || 'Intermediate'
+          );
+        }
+
         shouldMoveForward = false;
       } else {
-        // Answer is correct!
+        // Answer is correct! Reset failures
+        teachingState.consecutiveFailures = 0;
+
         if (teachingState.remediationNeeded) {
-          // Student answered the remedial question correctly!
-          // Increase concept mastery
+          // Student answered the remedial question correctly after re-teaching!
           teachingState.conceptMastery = teachingState.conceptMastery || {};
           teachingState.conceptMastery[conceptTitle] = Math.min(
             100,
             (teachingState.conceptMastery[conceptTitle] || 50) + 35
           );
 
-          // Clear remediation flag
+          // Clear remediation mode
           teachingState.remediationNeeded = false;
           teachingState.remedialMisconception = null;
+
+          // Restore difficulty level
+          if (teachingState.currentLevel && teachingState.currentLevel !== (lesson.level || 'Intermediate')) {
+            teachingState.currentLevel = lesson.level || 'Intermediate';
+          }
         }
 
-        // Advance concept if requirements are met
+        // Advance concept if mastery/passing requirements are met
         teachingState.completedConcepts = teachingState.completedConcepts || [];
-        if (!teachingState.completedConcepts.includes(conceptTitle) && avgScore >= 70) {
+        if (!teachingState.completedConcepts.includes(conceptTitle)) {
           teachingState.completedConcepts.push(conceptTitle);
           teachingState.currentConceptIndex = currentConceptIndex + 1;
         }
@@ -625,7 +725,7 @@ class LessonController {
         shouldMoveForward = true;
       }
 
-      // Clear current question
+      // Clear active question ID to prepare for next step
       teachingState.currentQuestionId = null;
       teachingState.currentQuestion = null;
 
@@ -643,7 +743,7 @@ class LessonController {
       const feedback =
         await answerEvaluator.generateFeedback(
           evaluation,
-          lesson.level || 'Intermediate',
+          teachingState.currentLevel || lesson.level || 'Intermediate',
           currentConcept,
           selectedLanguage
         );
@@ -673,6 +773,7 @@ class LessonController {
             understandingScore: teachingState.understandingScore,
             completedConcepts: teachingState.completedConcepts || [],
             remediationActive: !!teachingState.remediationNeeded,
+            currentDifficulty: teachingState.currentLevel || lesson.level || 'Intermediate',
             canMoveToNext: shouldMoveForward
           }
         },
