@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Sparkles, ChevronDown, ChevronRight, Loader } from 'lucide-react';
 import { lessonService } from '../services/lessonService';
 import { useAuth } from '../context/AuthContext';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import VisualExplanation from '../components/VisualExplanation';
+import VoicePlayer from '../components/VoicePlayer';
+import speechService from '../utils/speechService';
 
 export default function TopicLearningPage() {
   const { profile } = useAuth();
@@ -14,7 +16,13 @@ export default function TopicLearningPage() {
   const [level, setLevel] = useState(profile?.knowledge_level || 'beginner');
   const [language, setLanguage] = useState(profile?.preferred_language || 'English');
 
-  React.useEffect(() => {
+  useEffect(() => {
+    return () => {
+      speechService.stop();
+    };
+  }, []);
+
+  useEffect(() => {
     if (profile?.knowledge_level) {
       setLevel(profile.knowledge_level);
     }
@@ -241,6 +249,12 @@ export default function TopicLearningPage() {
                   </div>
                 ) : (
                   <div>
+                    {explanation && (
+                      <VoicePlayer 
+                        text={`${activeTopic || ''}. ${explanation}`} 
+                        language={language} 
+                      />
+                    )}
                     <MarkdownRenderer content={explanation} />
                     {explanationVisual && (
                       <div style={{ marginTop: '1.5rem' }}>

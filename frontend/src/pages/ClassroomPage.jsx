@@ -6,6 +6,8 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import QuizModal from '../components/QuizModal';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import VisualExplanation from '../components/VisualExplanation';
+import VoicePlayer from '../components/VoicePlayer';
+import speechService from '../utils/speechService';
 import '../assets/styles/classroom.css';
 
 export default function ClassroomPage() {
@@ -34,7 +36,11 @@ export default function ClassroomPage() {
     // LOAD LESSON
     // ---------------------------------------------------------
     useEffect(() => {
+        speechService.stop();
         loadLesson();
+        return () => {
+            speechService.stop();
+        };
     }, [lessonId]);
 
     const loadLesson = async () => {
@@ -291,6 +297,7 @@ export default function ClassroomPage() {
     // ---------------------------------------------------------
     const switchLanguage = async (newLanguage) => {
         try {
+            speechService.stop();
             await lessonService.switchLanguage(
                 lessonId,
                 {
@@ -563,9 +570,21 @@ export default function ClassroomPage() {
 
                             <div className="concept-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
-                                    {activeConcept?.title || lesson.topic}
-                                </h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                                        {activeConcept?.title || lesson.topic}
+                                    </h3>
+                                    <VoicePlayer 
+                                        text={`${activeConcept?.title || ''}. ${activeConcept?.description || ''}. Key points: ${(activeConcept?.teaching_points || []).join('. ')}.`} 
+                                        language={language}
+                                        compact={true}
+                                    />
+                                </div>
+
+                                <VoicePlayer 
+                                    text={`${activeConcept?.title || ''}. ${activeConcept?.description || ''}. Key points: ${(activeConcept?.teaching_points || []).join('. ')}.`} 
+                                    language={language}
+                                />
 
                                 {/* 1. Concept Explanation */}
                                 {activeConcept?.description && (
