@@ -88,16 +88,24 @@ export function AuthProvider({ children }) {
       setUser(loggedInUser);
 
       // Fetch profile after login
+      let userHasProfile = false;
       try {
         const profileRes = await authService.getMe();
         if (profileRes.ok && profileRes.data) {
           setProfile(profileRes.data.profile);
+          const p = profileRes.data.profile;
+          userHasProfile = Boolean(
+            p?.profile_completed ||
+            p?.preferences?.profile_completed ||
+            p?.knowledge_level ||
+            p?.preferences?.knowledge_level
+          );
         }
       } catch {
         setProfile(null);
       }
 
-      return { success: true };
+      return { success: true, hasProfile: userHasProfile };
     }
     const message = res.message || 'Login failed. Please check your credentials.';
     setAuthError(message);
@@ -132,7 +140,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const isAuthenticated = !!user && !!token;
-  const hasProfile = !!profile?.knowledge_level; // Profile considered complete if key field set
+  const hasProfile = Boolean(
+    profile?.profile_completed ||
+    profile?.preferences?.profile_completed ||
+    profile?.knowledge_level ||
+    profile?.preferences?.knowledge_level
+  );
 
   return (
     <AuthContext.Provider

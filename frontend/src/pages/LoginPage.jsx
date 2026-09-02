@@ -40,7 +40,10 @@ export default function LoginPage() {
     setSubmitting(false);
 
     if (result.success) {
-      navigate(from, { replace: true });
+      const targetPath = result.hasProfile 
+        ? (from && from !== '/login' && from !== '/profile/setup' ? from : '/dashboard')
+        : '/profile/setup';
+      navigate(targetPath, { replace: true });
     }
   };
 

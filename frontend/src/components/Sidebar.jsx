@@ -1,16 +1,22 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   GraduationCap, LayoutDashboard, BookOpen, TrendingUp, 
-  FileText, Settings, User
+  FileText, Settings, LogOut 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ activeRoute }) {
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  const { user, profile, logout } = useAuth();
 
   const currentPath = activeRoute || location.pathname;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   const navItems = [
     { label: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
@@ -53,8 +59,8 @@ export default function Sidebar({ activeRoute }) {
         })}
       </nav>
 
-      {/* User Profile Footer */}
-      <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+      {/* User Profile Footer & Logout */}
+      <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <Link to="/profile/setup" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--text-primary)' }}>
             {user?.name?.charAt(0).toUpperCase() || 'S'}
@@ -69,6 +75,38 @@ export default function Sidebar({ activeRoute }) {
           </div>
           <Settings size={16} color="var(--text-muted)" />
         </Link>
+
+        <button
+          id="btn-sidebar-logout"
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.65rem 0.75rem',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(244, 63, 94, 0.25)',
+            backgroundColor: 'rgba(244, 63, 94, 0.08)',
+            color: 'var(--accent-rose)',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            width: '100%',
+            transition: 'all 0.2s ease',
+            marginTop: '0.25rem'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(244, 63, 94, 0.16)';
+            e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(244, 63, 94, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.25)';
+          }}
+        >
+          <LogOut size={16} />
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   );

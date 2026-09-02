@@ -46,7 +46,7 @@ const TIME_OPTIONS = [
 ];
 
 export default function ProfileSetupPage() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, hasProfile, updateProfile } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -63,14 +63,15 @@ export default function ProfileSetupPage() {
 
   // Pre-fill form if profile already exists
   useEffect(() => {
-    if (profile) {
+    const prefs = profile?.preferences || profile || {};
+    if (prefs) {
       setForm({
-        education_level: profile.education_level || '',
-        knowledge_level: profile.knowledge_level || '',
-        preferred_language: profile.preferred_language || 'English',
-        learning_goal: profile.learning_goal || '',
-        teaching_style: profile.teaching_style || '',
-        available_time_minutes: profile.available_time_minutes || 30,
+        education_level: prefs.education_level || '',
+        knowledge_level: prefs.knowledge_level || '',
+        preferred_language: prefs.preferred_language || 'English',
+        learning_goal: prefs.learning_goal || '',
+        teaching_style: prefs.teaching_style || '',
+        available_time_minutes: prefs.available_time_minutes || 30,
       });
     }
   }, [profile]);
@@ -97,9 +98,16 @@ export default function ProfileSetupPage() {
     setSaving(false);
 
     if (res.ok && res.data) {
-      updateProfile(res.data);
+      updateProfile({
+        ...res.data,
+        profile_completed: true,
+        preferences: {
+          ...(res.data.preferences || res.data),
+          profile_completed: true
+        }
+      });
       setSaved(true);
-      setTimeout(() => navigate('/dashboard'), 1200);
+      setTimeout(() => navigate('/dashboard', { replace: true }), 800);
     } else {
       setError(res.message || 'Failed to save profile. Please try again.');
     }
@@ -109,15 +117,27 @@ export default function ProfileSetupPage() {
     <div className="setup-page">
       <div className="setup-container">
         {/* Header */}
-        <div className="setup-header">
+        <div className="setup-header" style={{ position: 'relative' }}>
+          {hasProfile && (
+            <button 
+              type="button" 
+              className="btn-secondary" 
+              onClick={() => navigate('/dashboard')}
+              style={{ position: 'absolute', right: 0, top: 0, padding: '0.4rem 0.85rem', fontSize: '0.82rem' }}
+            >
+              &larr; Back to Dashboard
+            </button>
+          )}
           <div className="setup-logo">
             <Sparkles size={22} />
           </div>
           <h1 className="setup-title">
-            Welcome, <span className="brand-text-gradient">{user?.name?.split(' ')[0]}!</span>
+            {hasProfile ? 'Edit Learning Preferences' : <>Welcome, <span className="brand-text-gradient">{user?.name?.split(' ')[0]}!</span></>}
           </h1>
           <p className="setup-subtitle">
-            Let&apos;s personalize your learning experience. This takes about 2 minutes.
+            {hasProfile 
+              ? 'Update your study goals, teaching style, and knowledge level anytime.' 
+              : 'Let\'s personalize your learning experience. This takes about 2 minutes.'}
           </p>
         </div>
 

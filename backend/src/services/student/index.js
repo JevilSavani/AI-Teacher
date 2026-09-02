@@ -25,6 +25,7 @@ class StudentProfileService {
     // 1. Fetch user preferences & profile
     const prefRes = await query('SELECT * FROM student_profiles WHERE user_id = $1', [userId]);
     const prefs = prefRes.rows[0] || {};
+    const isProfileCompleted = Boolean(prefs.profile_completed || prefs.knowledge_level);
 
     // 2. Fetch user's lessons & topics studied
     const lessonsRes = await query(
@@ -130,9 +131,9 @@ class StudentProfileService {
     lessons.forEach(l => {
       historyEvents.push({
         type: 'lesson',
-        title: `Studied "${l.topic}"`,
+        title: l.topic,
         status: l.status,
-        timestamp: l.updated_at || l.created_at
+        date: l.updated_at || l.created_at
       });
     });
 
@@ -149,12 +150,15 @@ class StudentProfileService {
 
     return {
       user_id: userId,
+      profile_completed: isProfileCompleted,
+      knowledge_level: prefs.knowledge_level || null,
       preferences: {
+        profile_completed: isProfileCompleted,
         preferred_language: prefs.preferred_language || 'English',
-        knowledge_level: prefs.knowledge_level || 'Intermediate',
-        education_level: prefs.education_level || 'undergraduate',
-        learning_goal: prefs.learning_goal || 'General Mastery',
-        teaching_style: prefs.teaching_style || 'visual',
+        knowledge_level: prefs.knowledge_level || null,
+        education_level: prefs.education_level || null,
+        learning_goal: prefs.learning_goal || null,
+        teaching_style: prefs.teaching_style || null,
         available_time_minutes: prefs.available_time_minutes || 20
       },
       summary: {
@@ -208,6 +212,8 @@ class StudentProfileService {
       ? parseInt(available_time_minutes, 10) 
       : null;
 
+    const isCompleted = true;
+
     const res = await query(
       `INSERT INTO student_profiles (
         user_id, 
@@ -217,8 +223,9 @@ class StudentProfileService {
         learning_goal, 
         teaching_style, 
         available_time_minutes,
+        profile_completed,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
       ON CONFLICT (user_id) 
       DO UPDATE SET
         education_level = EXCLUDED.education_level,
@@ -227,6 +234,7 @@ class StudentProfileService {
         learning_goal = EXCLUDED.learning_goal,
         teaching_style = EXCLUDED.teaching_style,
         available_time_minutes = EXCLUDED.available_time_minutes,
+        profile_completed = true,
         updated_at = NOW()
       RETURNING *`,
       [
@@ -236,11 +244,15 @@ class StudentProfileService {
         preferred_language,
         learning_goal || null,
         teaching_style || null,
-        parsedMinutes
+        parsedMinutes,
+        isCompleted
       ]
     );
 
-    return res.rows[0];
+    return {
+      ...res.rows[0],
+      profile_completed: true
+    };
   }
 
   async updateLearningPreferences(userId, preferences) {
