@@ -332,7 +332,7 @@ export default function ClassroomPage() {
                 }));
             } else if (progression?.isSameLesson) {
                 await loadLesson();
-                await getNextQuestion();
+                setTeachingPhase('explanation');
             } else if (progression?.lessonId) {
                 navigate(`/classroom/${progression.lessonId}`);
             } else {

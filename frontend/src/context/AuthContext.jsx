@@ -109,6 +109,9 @@ export function AuthProvider({ children }) {
    */
   const logout = useCallback(async () => {
     try {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
       await authService.logout();
     } catch {
       // Ignore logout API errors — always clear local state

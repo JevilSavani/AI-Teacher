@@ -10,25 +10,11 @@ class ProgressService {
       throw new Error('studentId is required');
     }
 
-    const userIdInt = parseInt(studentId, 10);
-    if (isNaN(userIdInt)) {
-      return {
-        studentId,
-        totalLessons: 0,
-        completedConcepts: [],
-        completedConceptsCount: 0,
-        conceptMastery: {},
-        weakConcepts: [],
-        overallUnderstandingScore: 0,
-        totalAttempts: 0,
-        correctAttempts: 0,
-        accuracyRate: 0
-      };
-    }
+    const userIdVal = typeof studentId === 'number' ? studentId : (parseInt(studentId, 10) || studentId);
 
     const result = await db.query(
       `SELECT * FROM lessons WHERE user_id = $1 ORDER BY updated_at DESC`,
-      [userIdInt]
+      [userIdVal]
     );
 
     const lessons = result.rows || [];
