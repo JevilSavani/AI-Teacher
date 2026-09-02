@@ -12,22 +12,65 @@ export default function Navbar() {
     navigate('/login');
   };
 
+  const scrollToSection = (id) => {
+    if (window.location.pathname !== '/') {
+      navigate('/#' + id);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="navbar">
-      <div className="navbar-inner">
+      <div className="navbar-inner" style={{ gap: '1.5rem' }}>
         {/* Brand */}
         <Link to={isAuthenticated ? '/dashboard' : '/'} className="brand" style={{ textDecoration: 'none' }}>
           <div className="brand-icon">
             <GraduationCap size={22} />
           </div>
           <div>
-            <span>AI </span>
+            <span style={{ color: 'var(--text-primary)' }}>AI </span>
             <span className="brand-text-gradient">Teacher</span>
           </div>
         </Link>
 
-        {/* Navigation */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Public SaaS Navigation Links */}
+        {!isAuthenticated && (
+          <nav className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', marginLeft: 'auto', marginRight: '1rem' }}>
+            <button 
+              onClick={() => scrollToSection('features')} 
+              style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500, hover: { color: 'var(--text-primary)' } }}
+            >
+              Features
+            </button>
+            <button 
+              onClick={() => scrollToSection('how-it-works')} 
+              style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}
+            >
+              How It Works
+            </button>
+            <button 
+              onClick={() => scrollToSection('ai-avatar')} 
+              style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}
+            >
+              AI Teacher
+            </button>
+            <button 
+              onClick={() => scrollToSection('personalization')} 
+              style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}
+            >
+              Personalization
+            </button>
+          </nav>
+        )}
+
+        {/* User Auth / Action Controls */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: isAuthenticated ? 'auto' : '0' }}>
           {!loading && (
             <>
               {isAuthenticated ? (
@@ -36,7 +79,7 @@ export default function Navbar() {
                   <Link
                     to="/dashboard"
                     className="btn-secondary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    style={{ padding: '0.45rem 0.95rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                   >
                     <LayoutDashboard size={15} />
                     Dashboard
@@ -46,7 +89,7 @@ export default function Navbar() {
                   <Link
                     to="/materials"
                     className="btn-secondary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    style={{ padding: '0.45rem 0.95rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                   >
                     <BookOpen size={15} />
                     Materials
@@ -56,7 +99,7 @@ export default function Navbar() {
                   <Link
                     to="/profile/setup"
                     className="btn-secondary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    style={{ padding: '0.45rem 0.95rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                   >
                     <Settings size={15} />
                     Profile
@@ -75,7 +118,7 @@ export default function Navbar() {
                     id="btn-logout"
                     onClick={handleLogout}
                     className="btn-secondary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-rose)', borderColor: 'rgba(244, 63, 94, 0.2)' }}
+                    style={{ padding: '0.45rem 0.95rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-rose)', borderColor: 'rgba(244, 63, 94, 0.2)' }}
                   >
                     <LogOut size={15} />
                     Logout
@@ -87,7 +130,7 @@ export default function Navbar() {
                     to="/login"
                     id="nav-login-link"
                     className="btn-secondary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.5rem 1.1rem', fontSize: '0.875rem' }}
                   >
                     Login
                   </Link>
@@ -95,9 +138,9 @@ export default function Navbar() {
                     to="/register"
                     id="nav-register-link"
                     className="btn-primary"
-                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.5rem 1.1rem', fontSize: '0.875rem' }}
                   >
-                    Get Started
+                    Get Started Free
                   </Link>
                 </>
               )}
