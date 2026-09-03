@@ -1,65 +1,83 @@
-# 🎓 AI Teacher — Human-Like Personalized AI Educator
+# 🎓 AI Teacher — Personalized AI Educator
 
 > **Learn anything. With a teacher that adapts to you.**
 
-AI Teacher is an intelligent, personalized learning platform that transforms educational materials and topics into interactive lessons delivered by an AI Teacher.
+AI Teacher is an intelligent, personalized learning platform that transforms
+topics and educational materials into interactive lessons delivered by an AI Teacher.
 
-Instead of simply generating answers, AI Teacher acts like a personal tutor — planning lessons, explaining concepts, asking questions, identifying misconceptions, adapting explanations, assessing understanding, and tracking long-term learning progress.
+Instead of simply generating answers, AI Teacher acts as a personal tutor —
+planning lessons, explaining concepts, asking questions, identifying misconceptions,
+adapting explanations, assessing understanding, and tracking learning progress.
 
 ---
 
 ## 🚀 Live Demo
 
-**Frontend:**  
+### 🌐 Frontend
+
 https://ai-teacher-nine-lime.vercel.app
 
-**Backend API:**  
+### ⚙️ Backend API
+
 https://ai-teacher-sfkr.onrender.com
 
-**Health Check:**  
+### 🩺 Backend Health Check
+
 https://ai-teacher-sfkr.onrender.com/api/health
+
+### 💻 Source Code
+
+https://github.com/JevilSavani/AI-Teacher
 
 ---
 
-## ✨ Key Features
+# ✨ Key Features
 
-### 🧑‍🏫 Personalized AI Teaching
+## 🧑‍🏫 Personalized AI Teaching
 
-AI Teacher adapts lessons according to:
+AI Teacher creates lessons based on the learner's profile and preferences.
+
+The system considers:
 
 - Education level
-- Current knowledge
+- Current knowledge level
 - Learning objective
 - Preferred teaching style
 - Preferred language
 - Available learning time
-- Required depth
+- Required learning depth
+
+Personalization preferences are collected during onboarding and stored with
+the student's profile.
 
 ---
 
-### 📚 Learn From Your Materials
+# 📚 Learn From Your Own Materials
 
-Upload educational content and learn directly from it.
+Students can upload educational material and learn directly from it.
 
-Supported formats include:
+### Supported formats
 
 - PDF
 - DOC
 - DOCX
 - PPT
 - PPTX
-- Text-based learning materials
-- Research/course material
+- Course materials
+- Research material
+- Text-based educational content
 
-The system extracts, processes and indexes the content so the AI can teach from the user's material.
+Uploaded material is processed and converted into searchable knowledge that
+can be used during lesson generation and follow-up teaching.
 
 ---
 
-### 🧠 RAG-Based Knowledge Grounding
+# 🧠 Retrieval-Augmented Generation (RAG)
 
-AI Teacher uses Retrieval-Augmented Generation (RAG) to ground explanations in uploaded learning material.
+AI Teacher uses Retrieval-Augmented Generation to ground AI explanations
+in the student's uploaded learning material.
 
-Pipeline:
+### RAG Pipeline
 
 ```text
 Upload Material
@@ -68,9 +86,9 @@ Document Processing
       ↓
 Text Extraction
       ↓
-Chunking
+Text Chunking
       ↓
-Embeddings
+Generate Embeddings
       ↓
 PostgreSQL + pgvector
       ↓
@@ -78,4 +96,4 @@ Semantic Retrieval
       ↓
 Relevant Context
       ↓
-AI Teacher
+AI Teacher Response
