@@ -1,9 +1,6 @@
-import { API_BASE_URL } from '../utils/constants';
+const API_BASE_URL = 'https://ai-teacher-sfkr.onrender.com/api';
 
-/**
- * Standard fetch wrapper with error handling and response formatting
- */
-export async function apiRequest(endpoint, options = {}) {
+async function apiRequest(endpoint, options = {}) {
   const baseUrl = (API_BASE_URL || 'https://ai-teacher-sfkr.onrender.com/api').replace(/\/+$/, '');
   const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
     ? endpoint
@@ -13,14 +10,8 @@ export async function apiRequest(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  // Do NOT set Content-Type header if body is FormData — browser sets boundary automatically
   if (!(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
-  }
-
-  const token = localStorage.getItem('token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
   }
 
   try {
@@ -88,46 +79,21 @@ export async function apiRequest(endpoint, options = {}) {
   }
 }
 
-/**
- * Axios-like API client for convenience
- */
-const api = {
-  get: async (endpoint, config = {}) => {
-    return apiRequest(endpoint, {
-      method: 'GET',
-      ...config
-    });
-  },
+async function runTests() {
+  console.log('--- Test 1: Deployed Render Backend Login Request ---');
+  const res1 = await apiRequest('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: 'user@example.com', password: 'password123' })
+  });
+  console.log('\nResult 1 (Login Output):', JSON.stringify(res1, null, 2));
 
-  post: async (endpoint, data, config = {}) => {
-    const isFormData = data instanceof FormData;
-    const options = {
-      method: 'POST',
-      ...config,
-      body: isFormData ? data : JSON.stringify(data)
-    };
+  console.log('\n--- Test 2: Deployed Render Health Endpoint ---');
+  const res2 = await apiRequest('/health');
+  console.log('\nResult 2 (Health Output):', JSON.stringify(res2, null, 2));
 
-    if (options.headers?.['Content-Type'] === 'multipart/form-data') {
-      delete options.headers['Content-Type'];
-    }
+  console.log('\n--- Test 3: Non-JSON Response Handling ---');
+  const res3 = await apiRequest('https://ai-teacher-sfkr.onrender.com/non-existent-page-that-returns-html');
+  console.log('\nResult 3 (Non-JSON Output):', JSON.stringify(res3, null, 2));
+}
 
-    return apiRequest(endpoint, options);
-  },
-
-  put: async (endpoint, data, config = {}) => {
-    return apiRequest(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-      ...config
-    });
-  },
-
-  delete: async (endpoint, config = {}) => {
-    return apiRequest(endpoint, {
-      method: 'DELETE',
-      ...config
-    });
-  },
-};
-
-export default api;
+runTests();
